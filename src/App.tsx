@@ -9,7 +9,7 @@ import SettingsPage from './pages/SettingsPage';
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <BrowserRouter basename="/wordmate-web">
       <Layout>
         <Routes>
           <Route path="/" element={<HomePage />} />

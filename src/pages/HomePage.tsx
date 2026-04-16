@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { Colors } from '../theme/colors';
 
@@ -12,20 +13,20 @@ export default function HomePage() {
       </div>
 
       <div style={styles.cardGrid}>
-        <NavCard title="📖 字典查詢" href="/dictionary" color={Colors.primary} />
-        <NavCard title="🃏 單字卡" href="/flashcard" color={Colors.secondary} />
-        <NavCard title="✏️ 測驗" href="/quiz" color={Colors.accent} />
-        <NavCard title="🔴 弱點複習" href="/weak-review" color={Colors.danger} />
+        <NavCard title="📖 字典查詢" to="/dictionary" color={Colors.primary} />
+        <NavCard title="🃏 單字卡" to="/flashcard" color={Colors.secondary} />
+        <NavCard title="✏️ 測驗" to="/quiz" color={Colors.accent} />
+        <NavCard title="🔴 弱點複習" to="/weak-review" color={Colors.danger} />
       </div>
     </div>
   );
 }
 
-function NavCard({ title, href, color }: { title: string; href: string; color: string }) {
+function NavCard({ title, to, color }: { title: string; to: string; color: string }) {
   return (
-    <a href={href} style={{ ...styles.card, borderColor: color, textDecoration: 'none' }}>
+    <Link to={to} style={{ ...styles.card, borderColor: color, textDecoration: 'none' }}>
       <span style={{ ...styles.cardTitle, color }}>{title}</span>
-    </a>
+    </Link>
   );
 }
 

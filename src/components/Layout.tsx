@@ -1,4 +1,5 @@
 import { type ReactNode } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import { Colors } from '../theme/colors';
 
 const NAV_ITEMS = [
@@ -11,22 +12,22 @@ const NAV_ITEMS = [
 ];
 
 export default function Layout({ children }: { children: ReactNode }) {
-  const current = window.location.pathname;
+  const location = useLocation();
 
   return (
     <div style={styles.root}>
       <nav style={styles.nav}>
         {NAV_ITEMS.map((item) => (
-          <a
+          <Link
             key={item.href}
-            href={item.href}
+            to={item.href}
             style={{
               ...styles.navItem,
-              ...(current === item.href ? styles.navItemActive : {}),
+              ...(location.pathname === item.href ? styles.navItemActive : {}),
             }}
           >
             {item.label}
-          </a>
+          </Link>
         ))}
       </nav>
       <main style={styles.main}>{children}</main>
