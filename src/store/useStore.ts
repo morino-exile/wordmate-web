@@ -39,6 +39,15 @@ export interface ChatMessage {
   timestamp: number;
 }
 
+export interface TodoItem {
+  id: string;
+  text: string;
+  completed: boolean;
+  characterId: string;
+  createdAt: number;
+  dueDate?: number;
+}
+
 export interface AppState {
   // 學習資料
   words: WordEntry[];
@@ -52,6 +61,9 @@ export interface AppState {
   selectedCharacterId: string;
   characterStates: Record<string, CharacterState>;
   chatHistories: Record<string, ChatMessage[]>;
+
+  // 待辦
+  todos: TodoItem[];
 
   // 設定（API key 只存在 localStorage，不上傳 Firestore）
   apiKey: string;
@@ -70,6 +82,9 @@ export interface AppState {
   recordDailyQuiz: () => void;
   addChatMessage: (characterId: string, message: ChatMessage) => void;
   clearChatHistory: (characterId: string) => void;
+  addTodo: (text: string, dueDate?: number) => void;
+  toggleTodo: (id: string) => void;
+  deleteTodo: (id: string) => void;
 }
 
 function isConsecutiveDay(prev: string, current: string): boolean {
@@ -94,6 +109,7 @@ export const useStore = create<AppState>()(
       selectedCharacterId: 'shiHe',
       characterStates: {},
       chatHistories: {},
+      todos: [],
       apiKey: '',
 
       selectCharacter: (id) => {
@@ -209,6 +225,26 @@ export const useStore = create<AppState>()(
         const histories = { ...get().chatHistories };
         histories[characterId] = [];
         set({ chatHistories: histories });
+      },
+
+      addTodo: (text, dueDate) => {
+        const todo: TodoItem = {
+          id: Date.now().toString(),
+          text,
+          completed: false,
+          characterId: get().selectedCharacterId,
+          createdAt: Date.now(),
+          dueDate,
+        };
+        set({ todos: [...get().todos, todo] });
+      },
+
+      toggleTodo: (id) => {
+        set({ todos: get().todos.map((t) => t.id === id ? { ...t, completed: !t.completed } : t) });
+      },
+
+      deleteTodo: (id) => {
+        set({ todos: get().todos.filter((t) => t.id !== id) });
       },
     }),
     {
