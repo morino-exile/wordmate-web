@@ -1,5 +1,5 @@
-const MODEL = 'gemini-1.5-flash';
-const BASE_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL}:generateContent`;
+const BASE_URL = (model: string) =>
+  `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
 // 角色人格描述（供 Gemini system prompt 使用）
 export const CHAR_PERSONALITIES: Record<string, string> = {
@@ -46,6 +46,7 @@ Rules:
 
 export async function chatWithCharacter(
   apiKey: string,
+  model: string,
   systemPrompt: string,
   recentHistory: { isUser: boolean; text: string }[],
   userMessage: string,
@@ -58,7 +59,7 @@ export async function chatWithCharacter(
     { role: 'user', parts: [{ text: userMessage }] },
   ];
 
-  const res = await fetch(`${BASE_URL}?key=${apiKey}`, {
+  const res = await fetch(`${BASE_URL(model)}?key=${apiKey}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({

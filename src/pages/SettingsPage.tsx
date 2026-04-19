@@ -5,7 +5,7 @@ import { Colors } from '../theme/colors';
 import { parseCEFRCsv, type ImportResult } from '../services/csvImport';
 
 export default function SettingsPage() {
-  const { apiKey, setApiKey, words, addWord } = useStore();
+  const { apiKey, setApiKey, geminiModel, setGeminiModel, words, addWord } = useStore();
   const { user, login, logout } = useAuth();
   const [inputKey, setInputKey] = useState(apiKey);
   const [saved, setSaved] = useState(false);
@@ -158,17 +158,30 @@ export default function SettingsPage() {
 
       {/* ── API 金鑰 ── */}
       <section style={s.section}>
-        <h3 style={s.sectionTitle}>API 金鑰</h3>
+        <h3 style={s.sectionTitle}>🤖 Gemini API 設定</h3>
         <p style={s.hint}>金鑰只存在你的瀏覽器，不會上傳到任何伺服器。</p>
         <input
           type="password"
-          placeholder="sk-ant-..."
+          placeholder="AIza..."
           value={inputKey}
           onChange={(e) => setInputKey(e.target.value)}
           style={s.input}
         />
-        <button onClick={handleSave} style={s.btnPrimary}>
-          {saved ? '已儲存 ✓' : '儲存'}
+
+        <p style={{ ...s.hint, marginTop: '0.75rem', marginBottom: '0.4rem' }}>使用模型</p>
+        <select
+          value={geminiModel}
+          onChange={(e) => setGeminiModel(e.target.value)}
+          style={s.select}
+        >
+          <option value="gemini-1.5-flash-8b">gemini-1.5-flash-8b（免費，推薦）</option>
+          <option value="gemini-1.5-flash">gemini-1.5-flash（免費）</option>
+          <option value="gemini-2.0-flash-lite">gemini-2.0-flash-lite（免費）</option>
+          <option value="gemini-2.0-flash">gemini-2.0-flash（需付費）</option>
+        </select>
+
+        <button onClick={handleSave} style={{ ...s.btnPrimary, marginTop: '0.75rem' }}>
+          {saved ? '已儲存 ✓' : '儲存 API Key'}
         </button>
       </section>
     </div>
@@ -196,6 +209,8 @@ const s: Record<string, React.CSSProperties> = {
   },
   dropText: { margin: 0, fontWeight: 600, color: Colors.text, fontSize: '0.95rem' },
   dropSub: { margin: 0, fontSize: '0.78rem', color: Colors.textMuted },
+
+  select: { width: '100%', padding: '0.6rem 0.85rem', border: `1.5px solid ${Colors.surfaceLight}`, borderRadius: 10, fontSize: '0.88rem', backgroundColor: Colors.surface, color: Colors.text, outline: 'none' },
 
   resultBox: {
     border: '1.5px solid', borderRadius: 10,

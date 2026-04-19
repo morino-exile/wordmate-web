@@ -25,7 +25,7 @@ export default function CharacterPage() {
   const navigate = useNavigate();
   const {
     selectedCharacterId, characterStates, selectCharacter,
-    apiKey, chatHistories, addChatMessage, clearChatHistory,
+    apiKey, geminiModel, chatHistories, addChatMessage, clearChatHistory,
   } = useStore();
 
   const [activeLine, setActiveLine] = useState('');
@@ -77,7 +77,7 @@ export default function CharacterPage() {
         character.id, character.name, character.nameEn, tierInfo.tier,
       );
       const history = messages.map((m) => ({ isUser: m.isUser, text: m.text }));
-      const reply = await chatWithCharacter(apiKey, systemPrompt, history, text);
+      const reply = await chatWithCharacter(apiKey, geminiModel, systemPrompt, history, text);
 
       const charMsg: ChatMessage = { id: (Date.now() + 1).toString(), text: reply, isUser: false, timestamp: Date.now() };
       addChatMessage(character.id, charMsg);

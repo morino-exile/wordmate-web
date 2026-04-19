@@ -88,6 +88,7 @@ export interface AppState {
 
   // 設定（API key 只存在 localStorage，不上傳 Firestore）
   apiKey: string;
+  geminiModel: string;
 
   // Actions
   selectCharacter: (id: string) => void;
@@ -99,6 +100,7 @@ export interface AppState {
   getWeakWords: (limit?: number) => WordEntry[];
   getWordProgressByExam: (exam: ExamCategory) => { total: number; learned: number; mastered: number };
   setApiKey: (key: string) => void;
+  setGeminiModel: (model: string) => void;
   recordDailyStudy: (count?: number) => void;
   recordDailyQuiz: () => void;
   addChatMessage: (characterId: string, message: ChatMessage) => void;
@@ -132,6 +134,7 @@ export const useStore = create<AppState>()(
       chatHistories: {},
       todos: [],
       apiKey: '',
+      geminiModel: 'gemini-1.5-flash-8b',
 
       selectCharacter: (id) => {
         const states = { ...get().characterStates };
@@ -218,6 +221,7 @@ export const useStore = create<AppState>()(
       },
 
       setApiKey: (key) => set({ apiKey: key }),
+      setGeminiModel: (model) => set({ geminiModel: model }),
 
       recordDailyStudy: (count = 1) => {
         const key = getTodayKey();
