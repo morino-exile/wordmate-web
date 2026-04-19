@@ -54,14 +54,18 @@ export function parseCEFRCsv(
 
   // 自動偵測欄位位置
   const header = rows[0].map((h) => h.toLowerCase().trim());
+  // 模糊比對（h.includes）
   const col = (name: string) => header.findIndex((h) => h.includes(name));
+  // 精確比對（完全相等），避免 'coreinventory' 誤中 'inventory'
+  const colExact = (name: string) => header.findIndex((h) => h === name);
 
   const idxWord      = col('headword') !== -1 ? col('headword') : 0;
   const idxPos       = col('pos') !== -1 ? col('pos') : 1;
   const idxCefr      = col('cefr') !== -1 ? col('cefr') : 2;
   const idxZhDef     = col('zh_def') !== -1 ? col('zh_def') : col('zh') !== -1 ? col('zh') : 6;
   const idxExample   = col('example') !== -1 ? col('example') : 7;
-  const idxInventory = col('inventory') !== -1 ? col('inventory') : -1;
+  // 必須用精確比對，否則 'coreinventory' 會被誤判為 inventory
+  const idxInventory = colExact('inventory') !== -1 ? colExact('inventory') : -1;
 
   let imported = 0;
   let skipped = 0;

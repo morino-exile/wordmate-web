@@ -77,7 +77,11 @@ export default function QuizPage() {
   }, [mode, value, storeWords]);
 
   const TOTAL = Math.min(10, pool.length);
-  const questions = useMemo(() => buildQuestions(pool, allMeanings, TOTAL), [pool, allMeanings, TOTAL]);
+
+  // ⚠️ 用 useState 凍結題目：避免 addWord 觸發 storeWords 更新時重算題組（連答 bug）
+  const [questions, setQuestions] = useState<Question[]>(() =>
+    pool.length >= 4 ? buildQuestions(pool, allMeanings, TOTAL) : []
+  );
 
   const [idx, setIdx] = useState(0);
   const [score, setScore] = useState(0);
@@ -146,7 +150,11 @@ export default function QuizPage() {
     }, 1200);
   }, [selected, q, idx, questions.length, recordStudy, addWord, storeWords]);
 
-  const restart = () => { setIdx(0); setScore(0); setSelected(null); setIsCorrect(null); setFinished(false); wrongRef.current = []; };
+  const restart = () => {
+    setQuestions(buildQuestions(pool, allMeanings, TOTAL)); // 重新隨機出題
+    setIdx(0); setScore(0); setSelected(null); setIsCorrect(null); setFinished(false);
+    wrongRef.current = [];
+  };
 
   // ── 結果畫面 ──
   if (finished) {
