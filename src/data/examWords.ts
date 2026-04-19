@@ -441,5 +441,11 @@ export function getExamWordCounts(): Record<ExamCategory, number> {
     '基本5000': getWordsByExamCategory('基本5000').length,
     'TOEFL': getWordsByExamCategory('TOEFL').length,
     'TOEIC': getWordsByExamCategory('TOEIC').length,
+    'A1': getWordsByExamCategory('A1').length,
+    'A2': getWordsByExamCategory('A2').length,
+    'B1': getWordsByExamCategory('B1').length,
+    'B2': getWordsByExamCategory('B2').length,
+    'C1': getWordsByExamCategory('C1').length,
+    'C2': getWordsByExamCategory('C2').length,
   };
 }

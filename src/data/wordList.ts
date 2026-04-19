@@ -1,6 +1,6 @@
 // Built-in starter word list + exam word bank
 
-export type ExamCategory = '基本2000' | '基本5000' | 'TOEFL' | 'TOEIC';
+export type ExamCategory = '基本2000' | '基本5000' | 'TOEFL' | 'TOEIC' | 'A1' | 'A2' | 'B1' | 'B2' | 'C1' | 'C2';
 
 export interface StarterWord {
   word: string;
