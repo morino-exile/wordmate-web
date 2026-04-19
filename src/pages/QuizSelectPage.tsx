@@ -11,25 +11,47 @@ const CEFR_DESC: Record<string, string> = {
 };
 
 const INVENTORY_LABELS: Record<string, string> = {
-  personality_and_feelings: '😊 個性與情感',
-  arts_and_literature:      '🎨 藝術與文學',
-  clothes:                  '👗 服裝',
-  colours_and_dimensions:   '🎨 顏色與尺寸',
-  education:                '📚 教育',
-  family_and_home:          '🏠 家庭與居家',
-  film:                     '🎬 電影',
-  food_and_drink:           '🍜 飲食',
-  hobbies_and_leisure:      '🎮 興趣與休閒',
-  holidays_and_travel:      '✈️ 旅遊',
-  idiomatic_expressions:    '💬 慣用語',
-  media_and_news:           '📰 媒體與新聞',
+  // ── 底線格式（CEFR CSV 標準欄位）──
+  personality_and_feelings:    '😊 個性與情感',
+  arts_and_literature:         '🎨 藝術與文學',
+  clothes:                     '👗 服裝',
+  colours_and_dimensions:      '🎨 顏色與尺寸',
+  education:                   '📚 教育',
+  family_and_home:             '🏠 家庭與居家',
+  film:                        '🎬 電影',
+  food_and_drink:              '🍜 飲食',
+  hobbies_and_leisure:         '🎮 興趣與休閒',
+  holidays_and_travel:         '✈️ 旅遊',
+  idiomatic_expressions:       '💬 慣用語',
+  media_and_news:              '📰 媒體與新聞',
   nationalities_and_countries: '🌍 國籍與國家',
-  personal_information:     '👤 個人資訊',
-  science_and_technology:   '🔬 科技',
-  shopping_and_town:        '🛍️ 購物與城市',
-  work_and_jobs:            '💼 工作職業',
-  description:              '📝 描述',
+  personal_information:        '👤 個人資訊',
+  science_and_technology:      '🔬 科技',
+  shopping_and_town:           '🛍️ 購物與城市',
+  work_and_jobs:               '💼 工作職業',
+  description:                 '📝 描述',
+  health_and_body:             '🏥 健康與身體',
+
+  // ── 空格句式（部分 CSV 使用的格式）──
+  'Education':                              '📚 教育',
+  'Media':                                  '📰 媒體',
+  'Work and Jobs':                          '💼 工作職業',
+  'Food and drink':                         '🍜 飲食',
+  'Personal information':                   '👤 個人資訊',
+  'Travel and services vocab':              '✈️ 旅遊與服務',
+  'Objects and rooms':                      '🏠 物品與房間',
+  'Things in the town, shops and shopping': '🛍️ 城市與購物',
+  'Collocation':                            '💬 搭配詞組',
+  'News, lifestyles and current affairs':   '📰 新聞與生活',
 };
+
+// 無對應 label 時的備用顯示：底線轉空格、首字大寫
+function formatInventoryLabel(inv: string): string {
+  const mapped = INVENTORY_LABELS[inv];
+  if (mapped) return mapped;
+  // 底線格式 → 空格，首字大寫
+  return inv.replace(/_/g, ' ').replace(/^\w/, (c) => c.toUpperCase());
+}
 
 export default function QuizSelectPage() {
   const navigate = useNavigate();
@@ -126,7 +148,7 @@ export default function QuizSelectPage() {
           {Object.entries(inventoryCounts)
             .sort((a, b) => b[1] - a[1])
             .map(([inv, count]) => {
-              const label = INVENTORY_LABELS[inv] ?? inv;
+              const label = formatInventoryLabel(inv);
               const disabled = count < 4;
               return (
                 <button
