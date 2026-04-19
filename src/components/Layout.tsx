@@ -5,10 +5,10 @@ import { Colors } from '../theme/colors';
 const NAV_ITEMS = [
   { label: '首頁', href: '/' },
   { label: '字典', href: '/dictionary' },
-  { label: '單字卡', href: '/flashcard' },
   { label: '測驗', href: '/quiz' },
   { label: '弱點', href: '/weak-review' },
   { label: '待辦', href: '/todo' },
+  { label: '角色', href: '/character' },
   { label: '設定', href: '/settings' },
 ];
 

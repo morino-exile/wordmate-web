@@ -7,6 +7,7 @@ import QuizPage from './pages/QuizPage';
 import WeakReviewPage from './pages/WeakReviewPage';
 import SettingsPage from './pages/SettingsPage';
 import TodoPage from './pages/TodoPage';
+import CharacterPage from './pages/CharacterPage';
 
 export default function App() {
   return (
@@ -19,6 +20,7 @@ export default function App() {
           <Route path="/quiz" element={<QuizPage />} />
           <Route path="/weak-review" element={<WeakReviewPage />} />
           <Route path="/todo" element={<TodoPage />} />
+          <Route path="/character" element={<CharacterPage />} />
           <Route path="/settings" element={<SettingsPage />} />
         </Routes>
       </Layout>
