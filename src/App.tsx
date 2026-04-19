@@ -3,6 +3,7 @@ import Layout from './components/Layout';
 import HomePage from './pages/HomePage';
 import DictionaryPage from './pages/DictionaryPage';
 import FlashcardPage from './pages/FlashcardPage';
+import QuizSelectPage from './pages/QuizSelectPage';
 import QuizPage from './pages/QuizPage';
 import WeakReviewPage from './pages/WeakReviewPage';
 import SettingsPage from './pages/SettingsPage';
@@ -17,7 +18,8 @@ export default function App() {
           <Route path="/" element={<HomePage />} />
           <Route path="/dictionary" element={<DictionaryPage />} />
           <Route path="/flashcard" element={<FlashcardPage />} />
-          <Route path="/quiz" element={<QuizPage />} />
+          <Route path="/quiz" element={<QuizSelectPage />} />
+          <Route path="/quiz/play" element={<QuizPage />} />
           <Route path="/weak-review" element={<WeakReviewPage />} />
           <Route path="/todo" element={<TodoPage />} />
           <Route path="/character" element={<CharacterPage />} />

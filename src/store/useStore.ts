@@ -10,12 +10,33 @@ export interface WordEntry {
   meaning: string;
   partOfSpeech?: string;
   example?: string;
-  mastery: number;
-  nextReview: number;
+  mastery: number;       // 0–5（設計文件 familiarity）
+  nextReview: number;    // timestamp
   timesCorrect: number;
   timesWrong: number;
   exams: ExamCategory[];
+  inventory?: string;    // 情境分類（education / travel / …）
   lastWrongDate?: number;
+}
+
+// SRS 間隔（對齊設計文件）
+const SRS_INTERVALS_MS = [
+  1 * 3600_000,      // 0 → 1 小時後（當天）
+  1 * 86400_000,     // 1 → 1 天
+  3 * 86400_000,     // 2 → 3 天
+  7 * 86400_000,     // 3 → 7 天
+  14 * 86400_000,    // 4 → 14 天
+  30 * 86400_000,    // 5 → 30 天
+];
+
+export function calcNextReview(mastery: number): number {
+  const idx = Math.min(mastery, SRS_INTERVALS_MS.length - 1);
+  return Date.now() + SRS_INTERVALS_MS[idx];
+}
+
+export function updateMastery(current: number, correct: boolean): number {
+  if (correct) return Math.min(5, current + 1);
+  return Math.max(0, current - 2); // 答錯懲罰 -2（設計文件規格）
 }
 
 export interface CharacterState {

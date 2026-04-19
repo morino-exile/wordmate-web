@@ -56,11 +56,12 @@ export function parseCEFRCsv(
   const header = rows[0].map((h) => h.toLowerCase().trim());
   const col = (name: string) => header.findIndex((h) => h.includes(name));
 
-  const idxWord    = col('headword') !== -1 ? col('headword') : 0;
-  const idxPos     = col('pos') !== -1 ? col('pos') : 1;
-  const idxCefr    = col('cefr') !== -1 ? col('cefr') : 2;
-  const idxZhDef  = col('zh_def') !== -1 ? col('zh_def') : col('zh') !== -1 ? col('zh') : 6;
-  const idxExample = col('example') !== -1 ? col('example') : 7;
+  const idxWord      = col('headword') !== -1 ? col('headword') : 0;
+  const idxPos       = col('pos') !== -1 ? col('pos') : 1;
+  const idxCefr      = col('cefr') !== -1 ? col('cefr') : 2;
+  const idxZhDef     = col('zh_def') !== -1 ? col('zh_def') : col('zh') !== -1 ? col('zh') : 6;
+  const idxExample   = col('example') !== -1 ? col('example') : 7;
+  const idxInventory = col('inventory') !== -1 ? col('inventory') : -1;
 
   let imported = 0;
   let skipped = 0;
@@ -78,11 +79,12 @@ export function parseCEFRCsv(
     // 已存在則跳過（不覆蓋學習進度）
     if (existingSet.has(word)) { skipped++; continue; }
 
-    const cefrRaw = row[idxCefr]?.trim() ?? '';
-    const category = cefrToCategory(cefrRaw);
-    const meaning  = row[idxZhDef]?.trim() ?? '';
-    const example  = row[idxExample]?.trim() ?? '';
-    const pos      = row[idxPos]?.trim() ?? '';
+    const cefrRaw   = row[idxCefr]?.trim() ?? '';
+    const category  = cefrToCategory(cefrRaw);
+    const meaning   = row[idxZhDef]?.trim() ?? '';
+    const example   = row[idxExample]?.trim() ?? '';
+    const pos       = row[idxPos]?.trim() ?? '';
+    const inventory = idxInventory !== -1 ? row[idxInventory]?.trim() : undefined;
 
     if (!meaning) { errors.push(`第 ${i + 1} 行：${word} 缺少中文釋義`); skipped++; continue; }
 
@@ -93,6 +95,7 @@ export function parseCEFRCsv(
       partOfSpeech: pos,
       example,
       exams: category ? [category] : [],
+      inventory: inventory || undefined,
       mastery: 0,
       nextReview: Date.now(),
       timesCorrect: 0,
