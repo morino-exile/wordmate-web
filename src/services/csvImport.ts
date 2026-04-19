@@ -39,6 +39,7 @@ function cefrToCategory(cefr: string): ExamCategory | null {
 
 export interface ImportResult {
   imported: number;
+  updated: number;   // 已存在但補了 inventory 的數量
   skipped: number;
   errors: string[];
 }
@@ -50,13 +51,13 @@ export function parseCEFRCsv(
   addWord: (w: WordEntry) => void
 ): ImportResult {
   const rows = parseCSV(csvText);
-  if (rows.length < 2) return { imported: 0, skipped: 0, errors: ['檔案是空的'] };
+  if (rows.length < 2) return { imported: 0, updated: 0, skipped: 0, errors: ['檔案是空的'] };
 
   // 自動偵測欄位位置
   const header = rows[0].map((h) => h.toLowerCase().trim());
-  // 模糊比對（h.includes）
+  // 模糊比對
   const col = (name: string) => header.findIndex((h) => h.includes(name));
-  // 精確比對（完全相等），避免 'coreinventory' 誤中 'inventory'
+  // 精確比對 — 避免 'coreinventory' 被誤判為 'inventory'
   const colExact = (name: string) => header.findIndex((h) => h === name);
 
   const idxWord      = col('headword') !== -1 ? col('headword') : 0;
@@ -64,14 +65,16 @@ export function parseCEFRCsv(
   const idxCefr      = col('cefr') !== -1 ? col('cefr') : 2;
   const idxZhDef     = col('zh_def') !== -1 ? col('zh_def') : col('zh') !== -1 ? col('zh') : 6;
   const idxExample   = col('example') !== -1 ? col('example') : 7;
-  // 必須用精確比對，否則 'coreinventory' 會被誤判為 inventory
+  // ⚠️ inventory 必須用精確比對，否則 'coreinventory' 欄會被誤抓
   const idxInventory = colExact('inventory') !== -1 ? colExact('inventory') : -1;
 
   let imported = 0;
+  let updated = 0;
   let skipped = 0;
   const errors: string[] = [];
 
-  const existingSet = new Set(existingWords.map((w) => w.word.toLowerCase()));
+  // 用 Map 做快速查找（key = lowercase word）
+  const existingMap = new Map(existingWords.map((w) => [w.word.toLowerCase(), w]));
 
   for (let i = 1; i < rows.length; i++) {
     const row = rows[i];
@@ -80,15 +83,25 @@ export function parseCEFRCsv(
     const word = row[idxWord]?.trim().toLowerCase();
     if (!word) continue;
 
-    // 已存在則跳過（不覆蓋學習進度）
-    if (existingSet.has(word)) { skipped++; continue; }
+    const inventory = idxInventory !== -1 ? (row[idxInventory]?.trim() || undefined) : undefined;
+
+    // 已存在的單字：只補 inventory（不覆蓋學習進度）
+    if (existingMap.has(word)) {
+      const existing = existingMap.get(word)!;
+      if (inventory && !existing.inventory) {
+        addWord({ ...existing, inventory });
+        updated++;
+      } else {
+        skipped++;
+      }
+      continue;
+    }
 
     const cefrRaw   = row[idxCefr]?.trim() ?? '';
     const category  = cefrToCategory(cefrRaw);
     const meaning   = row[idxZhDef]?.trim() ?? '';
     const example   = row[idxExample]?.trim() ?? '';
     const pos       = row[idxPos]?.trim() ?? '';
-    const inventory = idxInventory !== -1 ? row[idxInventory]?.trim() : undefined;
 
     if (!meaning) { errors.push(`第 ${i + 1} 行：${word} 缺少中文釋義`); skipped++; continue; }
 
@@ -107,9 +120,9 @@ export function parseCEFRCsv(
     };
 
     addWord(entry);
-    existingSet.add(word);
+    existingMap.set(word, entry); // 避免同一 CSV 內重複
     imported++;
   }
 
-  return { imported, skipped, errors };
+  return { imported, updated, skipped, errors };
 }

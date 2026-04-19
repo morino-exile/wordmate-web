@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useStore, calcNextReview, updateMastery } from '../store/useStore';
 import { allWords } from '../data/wordList';
@@ -44,7 +44,7 @@ export default function QuizPage() {
   const mode = searchParams.get('mode') ?? 'all';
   const value = searchParams.get('value') ?? '';
 
-  // 依模式篩選出題單字池
+  // 依模式篩選出題單字池（只用於初始建題，不在答題中途重算）
   const { pool, allMeanings, modeLabel } = useMemo(() => {
     let pool: { word: string; meaning: string; exams?: any[]; inventory?: string }[] = [];
     let label = '全部混合';
@@ -56,7 +56,6 @@ export default function QuizPage() {
       pool = getWordsForReview(50).map((w) => ({ word: w.word, meaning: w.meaning }));
       label = '今日複習';
     } else if (mode === 'cefr') {
-      // 先從已匯入的 storeWords 篩，再補 allWords
       const fromStore = storeWords.filter((w) => w.exams.includes(value as any));
       const fromBuiltin = allWords.filter((w) => w.exams.includes(value as any) && !fromStore.find((s) => s.word === w.word));
       pool = [...fromStore, ...fromBuiltin];
@@ -65,7 +64,6 @@ export default function QuizPage() {
       pool = storeWords.filter((w) => w.inventory === value);
       label = value.replace(/_/g, ' ');
     } else {
-      // all: 合併 storeWords + allWords
       const allSet = new Map<string, { word: string; meaning: string }>();
       for (const w of allWords) allSet.set(w.word, { word: w.word, meaning: w.meaning });
       for (const w of storeWords) allSet.set(w.word, { word: w.word, meaning: w.meaning });
@@ -74,11 +72,12 @@ export default function QuizPage() {
 
     const allMeanings = pool.map((w) => w.meaning).filter(Boolean);
     return { pool, allMeanings, modeLabel: label };
-  }, [mode, value, storeWords]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mode, value]); // ⚠️ 故意不依賴 storeWords，題目只在頁面載入時算一次
 
   const TOTAL = Math.min(10, pool.length);
 
-  // ⚠️ 用 useState 凍結題目：避免 addWord 觸發 storeWords 更新時重算題組（連答 bug）
+  // 凍結題組 — 答題過程中 storeWords 變動不重算
   const [questions, setQuestions] = useState<Question[]>(() =>
     pool.length >= 4 ? buildQuestions(pool, allMeanings, TOTAL) : []
   );
@@ -90,6 +89,13 @@ export default function QuizPage() {
   const [finished, setFinished] = useState(false);
   const wrongRef = useRef<{ word: string; meaning: string }[]>([]);
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // ⚠️ 用 ref 做即時守衛，防止 mobile touch+click 雙觸發、React batching 造成的多次進入
+  const processingRef = useRef(false);
+
+  // storeWords 快照用 ref，讓 handleAnswer 不需要依賴 storeWords（避免 callback 頻繁重建）
+  const storeWordsRef = useRef(storeWords);
+  useEffect(() => { storeWordsRef.current = storeWords; }, [storeWords]);
 
   useEffect(() => () => { if (timerRef.current) clearTimeout(timerRef.current); }, []);
 
@@ -112,22 +118,30 @@ export default function QuizPage() {
   const q = questions[idx];
   const progress = (idx / questions.length) * 100;
 
-  const handleAnswer = useCallback((optIdx: number) => {
-    if (selected !== null) return;
+  const handleAnswer = (optIdx: number) => {
+    // ⚠️ ref 守衛：比 selected state 更即時，防止雙觸發
+    if (processingRef.current) return;
+    processingRef.current = true;
+
     const correct = optIdx === q.correctIndex;
     setSelected(optIdx);
     setIsCorrect(correct);
     if (correct) setScore((s) => s + 1);
     else wrongRef.current.push({ word: String((q.word as any).word), meaning: q.meaning });
 
-    recordStudy(correct);
-
-    // 更新 SRS（對齊設計文件：-2 懲罰、精確間隔）
+    // 預先算好 SRS entry（用 ref 版的 storeWords，避免 stale closure）
     const wordStr = String((q.word as any).word);
-    const existing = storeWords.find((w) => w.word === wordStr);
+    const existing = storeWordsRef.current.find((w) => w.word === wordStr);
     const newMastery = updateMastery(existing?.mastery ?? 0, correct);
     const entry: WordEntry = existing
-      ? { ...existing, mastery: newMastery, nextReview: calcNextReview(newMastery), timesCorrect: existing.timesCorrect + (correct ? 1 : 0), timesWrong: existing.timesWrong + (correct ? 0 : 1), lastWrongDate: correct ? existing.lastWrongDate : Date.now() }
+      ? {
+          ...existing,
+          mastery: newMastery,
+          nextReview: calcNextReview(newMastery),
+          timesCorrect: existing.timesCorrect + (correct ? 1 : 0),
+          timesWrong: existing.timesWrong + (correct ? 0 : 1),
+          lastWrongDate: correct ? existing.lastWrongDate : Date.now(),
+        }
       : {
           word: wordStr,
           phonetic: (q.word as any).phonetic ?? '',
@@ -142,16 +156,28 @@ export default function QuizPage() {
           timesWrong: correct ? 0 : 1,
           lastWrongDate: correct ? undefined : Date.now(),
         };
-    addWord(entry);
 
     timerRef.current = setTimeout(() => {
-      if (idx + 1 >= questions.length) setFinished(true);
-      else { setIdx((i) => i + 1); setSelected(null); setIsCorrect(null); }
+      // ① 先切換畫面
+      if (idx + 1 >= questions.length) {
+        setFinished(true);
+      } else {
+        setIdx((i) => i + 1);
+        setSelected(null);
+        setIsCorrect(null);
+      }
+      // ② 畫面切換後才更新 store，避免 storeWords 變動在 1200ms 視窗內觸發多餘重繪
+      recordStudy(correct);
+      addWord(entry);
+      // ③ 解鎖守衛（在 state 更新 commit 後才能接受下一題）
+      processingRef.current = false;
     }, 1200);
-  }, [selected, q, idx, questions.length, recordStudy, addWord, storeWords]);
+  };
 
   const restart = () => {
-    setQuestions(buildQuestions(pool, allMeanings, TOTAL)); // 重新隨機出題
+    if (timerRef.current) clearTimeout(timerRef.current);
+    processingRef.current = false;
+    setQuestions(buildQuestions(pool, allMeanings, TOTAL));
     setIdx(0); setScore(0); setSelected(null); setIsCorrect(null); setFinished(false);
     wrongRef.current = [];
   };
@@ -216,7 +242,12 @@ export default function QuizPage() {
             else if (i === selected && !isCorrect) { bg = Colors.danger; color = '#fff'; }
           }
           return (
-            <button key={i} style={{ ...s.optBtn, backgroundColor: bg, color }} onClick={() => handleAnswer(i)} disabled={selected !== null}>
+            <button
+              key={i}
+              style={{ ...s.optBtn, backgroundColor: bg, color }}
+              onClick={() => handleAnswer(i)}
+              disabled={selected !== null}
+            >
               {opt}
             </button>
           );

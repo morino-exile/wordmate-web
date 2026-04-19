@@ -24,7 +24,7 @@ export default function SettingsPage() {
 
   const processFile = (file: File) => {
     if (!file.name.endsWith('.csv')) {
-      setImportResult({ imported: 0, skipped: 0, errors: ['請選擇 .csv 檔案'] });
+      setImportResult({ imported: 0, updated: 0, skipped: 0, errors: ['請選擇 .csv 檔案'] });
       return;
     }
     setImporting(true);
@@ -117,9 +117,14 @@ export default function SettingsPage() {
             <p style={s.resultLine}>
               ✅ 成功匯入 <strong>{importResult.imported}</strong> 個單字
             </p>
+            {importResult.updated > 0 && (
+              <p style={s.resultLine}>
+                🔄 補上情境分類 <strong>{importResult.updated}</strong> 個（已存在單字）
+              </p>
+            )}
             {importResult.skipped > 0 && (
               <p style={s.resultLine}>
-                ⏭ 略過 <strong>{importResult.skipped}</strong> 個（已存在）
+                ⏭ 略過 <strong>{importResult.skipped}</strong> 個（已存在且無需更新）
               </p>
             )}
             {importResult.errors.length > 0 && (
