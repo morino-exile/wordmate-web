@@ -51,22 +51,38 @@ export async function chatWithCharacter(
   recentHistory: { isUser: boolean; text: string }[],
   userMessage: string,
 ): Promise<string> {
-  const contents = [
-    ...recentHistory.slice(-12).map((m) => ({
-      role: m.isUser ? 'user' : 'model',
-      parts: [{ text: m.text }],
-    })),
-    { role: 'user', parts: [{ text: userMessage }] },
-  ];
+  const isGemma = model.startsWith('gemma');
+
+  const historyContents = recentHistory.slice(-12).map((m) => ({
+    role: m.isUser ? 'user' : 'model',
+    parts: [{ text: m.text }],
+  }));
+
+  // Gemma 不支援 system_instruction，改用第一輪對話注入角色設定
+  const contents = isGemma
+    ? [
+        { role: 'user',  parts: [{ text: `以下是你的角色設定，請照此扮演：\n\n${systemPrompt}` }] },
+        { role: 'model', parts: [{ text: '好的，我會完全按照這個角色設定來回應。' }] },
+        ...historyContents,
+        { role: 'user',  parts: [{ text: userMessage }] },
+      ]
+    : [
+        ...historyContents,
+        { role: 'user', parts: [{ text: userMessage }] },
+      ];
+
+  const body: Record<string, unknown> = {
+    contents,
+    generationConfig: { maxOutputTokens: 150, temperature: 0.95 },
+  };
+  if (!isGemma) {
+    body.system_instruction = { parts: [{ text: systemPrompt }] };
+  }
 
   const res = await fetch(`${BASE_URL(model)}?key=${apiKey}`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      system_instruction: { parts: [{ text: systemPrompt }] },
-      contents,
-      generationConfig: { maxOutputTokens: 150, temperature: 0.95 },
-    }),
+    body: JSON.stringify(body),
   });
 
   if (!res.ok) {
