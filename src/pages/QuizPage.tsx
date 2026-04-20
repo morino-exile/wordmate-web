@@ -3,6 +3,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useStore, calcNextReview, updateMastery } from '../store/useStore';
 import { allWords } from '../data/wordList';
 import { Colors } from '../theme/colors';
+import { playWord } from '../services/audioService';
 import type { StarterWord } from '../data/wordList';
 import type { WordEntry } from '../store/useStore';
 
@@ -235,6 +236,11 @@ export default function QuizPage() {
       <div style={s.wordSection}>
         <p style={s.wordText}>{String((q.word as any).word)}</p>
         <p style={s.phonetic}>{(q.word as any).phonetic ?? ''}</p>
+        <button
+          style={s.speakBtn}
+          onClick={() => playWord(String((q.word as any).word))}
+          title="播放發音"
+        >🔊</button>
       </div>
 
       <div style={s.options}>
@@ -277,7 +283,8 @@ const s: Record<string, React.CSSProperties> = {
   scoreDisplay: { color: Colors.accent, fontWeight: 700 },
   progressTrack: { height: 5, backgroundColor: Colors.surface, borderRadius: 3, overflow: 'hidden', marginBottom: '1.5rem' },
   progressFill: { height: '100%', backgroundColor: Colors.primary, borderRadius: 3, transition: 'width 0.3s ease' },
-  wordSection: { textAlign: 'center', marginBottom: '2rem' },
+  wordSection: { textAlign: 'center', marginBottom: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center' },
+  speakBtn: { background: 'none', border: 'none', fontSize: '1.4rem', cursor: 'pointer', padding: '0.2rem 0.5rem', opacity: 0.65, marginTop: '0.25rem' },
   wordText: { fontSize: '2.2rem', fontWeight: 800, color: Colors.text, margin: '0 0 0.4rem' },
   phonetic: { color: Colors.textMuted, fontStyle: 'italic', margin: 0, fontSize: '1rem' },
   options: { display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1rem' },

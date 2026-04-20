@@ -2,6 +2,7 @@ import { useState, useMemo } from 'react';
 import { useStore } from '../store/useStore';
 import { allWords } from '../data/wordList';
 import { Colors } from '../theme/colors';
+import { playWord } from '../services/audioService';
 
 function shuffle<T>(arr: T[]): T[] {
   const a = [...arr];
@@ -79,6 +80,11 @@ export default function FlashcardPage() {
             <div style={s.cardFront}>
               <p style={s.cardWord}>{card.word}</p>
               <p style={s.cardPhonetic}>{card.phonetic}</p>
+              <button
+                style={s.speakBtn}
+                onClick={(e) => { e.stopPropagation(); playWord(card.word); }}
+                title="播放發音"
+              >🔊</button>
               <p style={s.tapHint}>點擊翻牌</p>
             </div>
           ) : (
@@ -137,6 +143,11 @@ const s: Record<string, React.CSSProperties> = {
   cardWord: { fontSize: '2.2rem', fontWeight: 800, color: Colors.text, margin: '0 0 0.5rem' },
   cardPhonetic: { fontSize: '1rem', color: Colors.textMuted, fontStyle: 'italic', margin: '0 0 1rem' },
   tapHint: { fontSize: '0.8rem', color: Colors.textMuted, margin: 0 },
+  speakBtn: {
+    background: 'none', border: 'none', fontSize: '1.3rem',
+    cursor: 'pointer', padding: '0.2rem 0.5rem', marginBottom: '0.25rem',
+    opacity: 0.7,
+  },
   posTag: {
     display: 'inline-block', fontSize: '0.8rem', color: Colors.primary,
     backgroundColor: Colors.primaryLight, padding: '0.2rem 0.6rem',

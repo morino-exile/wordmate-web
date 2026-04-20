@@ -108,6 +108,7 @@ export interface AppState {
   addTodo: (text: string, dueDate?: number) => void;
   toggleTodo: (id: string) => void;
   deleteTodo: (id: string) => void;
+  syncFromCloud: (data: Partial<AppState>) => void;
 }
 
 function isConsecutiveDay(prev: string, current: string): boolean {
@@ -270,6 +271,12 @@ export const useStore = create<AppState>()(
 
       deleteTodo: (id) => {
         set({ todos: get().todos.filter((t) => t.id !== id) });
+      },
+
+      syncFromCloud: (data) => {
+        // apiKey / geminiModel 不從雲端覆寫（每台裝置各自設定）
+        const { apiKey, geminiModel } = get();
+        set({ ...data, apiKey, geminiModel });
       },
     }),
     {
