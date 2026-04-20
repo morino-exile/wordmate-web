@@ -57,14 +57,25 @@ export default function QuizSelectPage() {
   const navigate = useNavigate();
   const { words } = useStore();
 
-  // 計算各 CEFR 等級的單字數（來自匯入的 words）
-  const cefrCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
+  // 計算各 CEFR 等級的單字數與學習進度
+  const cefrStats = useMemo(() => {
+    const stats: Record<string, { total: number; learned: number }> = {};
     for (const level of CEFR_LEVELS) {
-      counts[level] = words.filter((w) => w.exams.includes(level)).length;
+      const levelWords = words.filter((w) => w.exams.includes(level));
+      stats[level] = {
+        total:   levelWords.length,
+        learned: levelWords.filter((w) => w.mastery >= 1).length,
+      };
     }
-    return counts;
+    return stats;
   }, [words]);
+
+  // 向下相容（部分地方只需要 total）
+  const cefrCounts = useMemo(() => {
+    const c: Record<string, number> = {};
+    for (const level of CEFR_LEVELS) c[level] = cefrStats[level].total;
+    return c;
+  }, [cefrStats]);
 
   // 計算各情境的單字數
   const inventoryCounts = useMemo(() => {
@@ -120,8 +131,9 @@ export default function QuizSelectPage() {
         )}
         <div style={s.grid2}>
           {CEFR_LEVELS.map((level) => {
-            const count = cefrCounts[level] ?? 0;
-            const disabled = count < 4;
+            const { total, learned } = cefrStats[level];
+            const disabled = total < 4;
+            const pct = total > 0 ? Math.round((learned / total) * 100) : 0;
             return (
               <button
                 key={level}
@@ -131,7 +143,15 @@ export default function QuizSelectPage() {
               >
                 <span style={{ ...s.levelBadge, backgroundColor: cefrColor(level) }}>{level}</span>
                 <span style={s.levelName}>{CEFR_DESC[level]}</span>
-                <span style={s.levelCount}>{count} 個單字</span>
+                <span style={s.levelCount}>{total} 個單字</span>
+                {total >= 4 && (
+                  <div style={s.cefrProgress}>
+                    <div style={{ ...s.cefrBar, width: `${pct}%`, backgroundColor: cefrColor(level) }} />
+                  </div>
+                )}
+                {total >= 4 && (
+                  <span style={s.cefrPct}>{learned} / {total} 已學（{pct}%）</span>
+                )}
               </button>
             );
           })}
@@ -205,6 +225,9 @@ const s: Record<string, React.CSSProperties> = {
   levelBadge: { fontSize: '0.82rem', fontWeight: 800, color: '#fff', padding: '0.15rem 0.5rem', borderRadius: 6 },
   levelName: { fontSize: '0.82rem', fontWeight: 600, color: Colors.text },
   levelCount: { fontSize: '0.75rem', color: Colors.textMuted },
+  cefrProgress: { width: '100%', height: 4, backgroundColor: Colors.surfaceLight, borderRadius: 2, overflow: 'hidden', marginTop: 2 },
+  cefrBar: { height: '100%', borderRadius: 2, transition: 'width 0.3s' },
+  cefrPct: { fontSize: '0.68rem', color: Colors.textMuted },
 
   invBtn: {
     display: 'flex', justifyContent: 'space-between', alignItems: 'center',

@@ -39,7 +39,8 @@ function buildQuestions(pool: { word: string; meaning: string }[], allMeanings: 
 export default function QuizPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { recordStudy, addWord, words: storeWords, getWeakWords, getWordsForReview } = useStore();
+  const { recordStudy, addWord, words: storeWords, getWeakWords, getWordsForReview,
+    recordDailyStudy, recordDailyQuiz } = useStore();
 
   const mode = searchParams.get('mode') ?? 'all';
   const value = searchParams.get('value') ?? '';
@@ -159,17 +160,20 @@ export default function QuizPage() {
 
     timerRef.current = setTimeout(() => {
       // ① 先切換畫面
-      if (idx + 1 >= questions.length) {
+      const isLast = idx + 1 >= questions.length;
+      if (isLast) {
         setFinished(true);
       } else {
         setIdx((i) => i + 1);
         setSelected(null);
         setIsCorrect(null);
       }
-      // ② 畫面切換後才更新 store，避免 storeWords 變動在 1200ms 視窗內觸發多餘重繪
+      // ② 更新 store
       recordStudy(correct);
       addWord(entry);
-      // ③ 解鎖守衛（在 state 更新 commit 後才能接受下一題）
+      recordDailyStudy(1);              // 每答一題記錄一個單字
+      if (isLast) recordDailyQuiz();    // 整回合結束才記一次測驗
+      // ③ 解鎖守衛
       processingRef.current = false;
     }, 1200);
   };

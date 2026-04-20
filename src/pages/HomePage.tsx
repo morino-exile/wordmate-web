@@ -29,7 +29,8 @@ export default function HomePage() {
   const affection = charState?.affection ?? 0;
   const stamina = charState?.stamina ?? 50;
 
-  const [greeting] = useState(() => getRandomLine(character.lines.greeting));
+  // 用 useMemo + character.id 為依賴，切換角色時立刻更新台詞
+  const greeting = useMemo(() => getRandomLine(character.lines.greeting), [character.id]);
 
   // 快速單字卡
   const availableWords = useMemo(

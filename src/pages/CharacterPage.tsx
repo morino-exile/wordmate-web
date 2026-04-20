@@ -26,6 +26,7 @@ export default function CharacterPage() {
   const {
     selectedCharacterId, characterStates, selectCharacter,
     apiKey, geminiModel, chatHistories, addChatMessage, clearChatHistory,
+    addAffection, addStamina,
   } = useStore();
 
   const [activeLine, setActiveLine] = useState('');
@@ -53,9 +54,11 @@ export default function CharacterPage() {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  const speak = (lines: string[]) => {
+  const speak = (lines: string[], affectionDelta = 0, staminaDelta = 0) => {
     setActiveLine(getRandomLine(lines));
     setShowLine(true);
+    if (affectionDelta) addAffection(character.id, affectionDelta);
+    if (staminaDelta)  addStamina(character.id, staminaDelta);
   };
 
   const handleSend = async () => {
@@ -172,13 +175,13 @@ export default function CharacterPage() {
         <div style={s.sectionLabel}>💬 角色台詞</div>
         <div style={s.interactGrid}>
           <InteractBtn label="打招呼" emoji="👋" color={character.themeColor}
-            onClick={() => speak(character.lines.greeting)} />
+            onClick={() => speak(character.lines.greeting, 2, 1)} />
           <InteractBtn label="鼓勵學習" emoji="📖" color={Colors.success}
-            onClick={() => speak(character.lines.encourageStudy)} />
+            onClick={() => speak(character.lines.encourageStudy, 1, 3)} />
           <InteractBtn label="提醒待辦" emoji="📋" color={Colors.accent}
-            onClick={() => speak(character.lines.remindTodo)} />
+            onClick={() => speak(character.lines.remindTodo, 1, 0)} />
           <InteractBtn label="好感提升" emoji="✨" color={Colors.primary}
-            onClick={() => speak(character.lines.affectionUp)} />
+            onClick={() => speak(character.lines.affectionUp, 5, 2)} />
         </div>
       </div>
 
