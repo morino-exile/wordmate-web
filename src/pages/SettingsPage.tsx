@@ -174,10 +174,17 @@ export default function SettingsPage() {
           onChange={(e) => setGeminiModel(e.target.value)}
           style={s.select}
         >
-          <option value="gemini-1.5-flash-8b">gemini-1.5-flash-8b（免費，推薦）</option>
-          <option value="gemini-1.5-flash">gemini-1.5-flash（免費）</option>
-          <option value="gemini-2.0-flash-lite">gemini-2.0-flash-lite（免費）</option>
-          <option value="gemini-2.0-flash">gemini-2.0-flash（需付費）</option>
+          <optgroup label="✅ 免費額度充足（推薦）">
+            <option value="gemma-3-27b-it">Gemma 3 27B（14,400次/天，品質最佳）</option>
+            <option value="gemma-3-12b-it">Gemma 3 12B（14,400次/天，速度較快）</option>
+          </optgroup>
+          <optgroup label="⚠️ 免費但額度有限">
+            <option value="gemini-2.5-flash-preview-05-20">Gemini 2.5 Flash（20次/天）</option>
+          </optgroup>
+          <optgroup label="💳 需付費帳號">
+            <option value="gemini-2.0-flash">Gemini 2.0 Flash</option>
+            <option value="gemini-1.5-flash">Gemini 1.5 Flash</option>
+          </optgroup>
         </select>
 
         <button onClick={handleSave} style={{ ...s.btnPrimary, marginTop: '0.75rem' }}>

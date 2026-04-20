@@ -134,7 +134,7 @@ export const useStore = create<AppState>()(
       chatHistories: {},
       todos: [],
       apiKey: '',
-      geminiModel: 'gemini-1.5-flash-8b',
+      geminiModel: 'gemma-3-27b-it',
 
       selectCharacter: (id) => {
         const states = { ...get().characterStates };
