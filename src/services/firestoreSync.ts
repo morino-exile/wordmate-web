@@ -1,4 +1,4 @@
-import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { doc, getDoc, writeBatch } from 'firebase/firestore';
 import { db } from '../firebase';
 import type { WordEntry, CharacterState, ChatMessage, TodoItem, DailyRecord } from '../store/useStore';
 
@@ -17,30 +17,65 @@ export interface SyncData {
   lastSyncAt: number;
 }
 
-// Firestore 路徑：/users/{uid}/wordmate/data
-function getRef(uid: string) {
-  return doc(db, 'users', uid, 'wordmate', 'data');
-}
+// 每份文件最多存幾個單字（控制在 ~700KB 以下，遠低於 Firestore 1MB 限制）
+const WORDS_PER_CHUNK = 3000;
 
-/** 儲存到 Firestore（只同步有學習紀錄的單字，減少文件大小） */
+// Firestore 路徑
+const metaRef  = (uid: string) => doc(db, 'users', uid, 'wordmate', 'meta');
+const chunkRef = (uid: string, i: number) => doc(db, 'users', uid, 'wordmate', `words_${i}`);
+
+// ── 寫入 ────────────────────────────────────────────────────────────
+
+/**
+ * 儲存到 Firestore
+ * - meta 文件：所有非單字資料
+ * - words_0, words_1 … 文件：單字分批存放（每批 3000 個）
+ */
 export async function saveToFirestore(uid: string, data: SyncData): Promise<void> {
-  // 只上傳「有被學習過」的單字（mastery > 0 或有答題紀錄）
-  const studiedWords = data.words.filter(
-    (w) => w.mastery > 0 || w.timesCorrect > 0 || w.timesWrong > 0,
-  );
-  await setDoc(getRef(uid), { ...data, words: studiedWords, lastSyncAt: Date.now() });
+  const { words, ...meta } = data;
+  const now = Date.now();
+
+  // 單字分批
+  const chunks: WordEntry[][] = [];
+  for (let i = 0; i < words.length; i += WORDS_PER_CHUNK) {
+    chunks.push(words.slice(i, i + WORDS_PER_CHUNK));
+  }
+
+  // Firestore batch write（最多 500 ops，meta + words_chunk）
+  // 若單字超過 500 批，分多次 batch（實際上不太可能）
+  const batch = writeBatch(db);
+  batch.set(metaRef(uid), { ...meta, chunkCount: chunks.length, lastSyncAt: now });
+  for (let i = 0; i < chunks.length; i++) {
+    batch.set(chunkRef(uid, i), { words: chunks[i] });
+  }
+  await batch.commit();
 }
 
-/** 從 Firestore 讀取 */
+// ── 讀取 ────────────────────────────────────────────────────────────
+
+/** 從 Firestore 讀取（meta + 所有 words chunk） */
 export async function loadFromFirestore(uid: string): Promise<SyncData | null> {
-  const snap = await getDoc(getRef(uid));
-  if (!snap.exists()) return null;
-  return snap.data() as SyncData;
+  const metaSnap = await getDoc(metaRef(uid));
+  if (!metaSnap.exists()) return null;
+
+  const metaData = metaSnap.data() as Omit<SyncData, 'words'> & { chunkCount?: number };
+  const chunkCount = metaData.chunkCount ?? 1;
+
+  // 讀取所有單字分批
+  const wordPromises = Array.from({ length: chunkCount }, (_, i) => getDoc(chunkRef(uid, i)));
+  const chunkSnaps = await Promise.all(wordPromises);
+  const words: WordEntry[] = chunkSnaps.flatMap((snap) =>
+    snap.exists() ? (snap.data().words as WordEntry[]) : [],
+  );
+
+  return { ...metaData, words };
 }
+
+// ── 合併邏輯 ─────────────────────────────────────────────────────────
 
 /**
  * 合併兩份 words 陣列（local vs remote）
- * 以 mastery 較高者為準；相同時取 timesCorrect 較多的版本
+ * mastery 較高者優先；相同時取 timesCorrect 較多的版本
  */
 export function mergeWords(local: WordEntry[], remote: WordEntry[]): WordEntry[] {
   const map = new Map<string, WordEntry>();
@@ -59,9 +94,7 @@ export function mergeWords(local: WordEntry[], remote: WordEntry[]): WordEntry[]
   return Array.from(map.values());
 }
 
-/**
- * 合併 studyHistory（取每天各欄位的最大值）
- */
+/** 合併 studyHistory（取每天各欄位的最大值） */
 export function mergeStudyHistory(
   local: Record<string, DailyRecord>,
   remote: Record<string, DailyRecord>,
@@ -83,12 +116,10 @@ export function mergeStudyHistory(
   return result;
 }
 
-/**
- * 合併 todos（以 id 為 key，保留所有不重複的 todo）
- */
+/** 合併 todos（以 id 為 key，local wins） */
 export function mergeTodos(local: TodoItem[], remote: TodoItem[]): TodoItem[] {
   const map = new Map<string, TodoItem>();
   for (const t of remote) map.set(t.id, t);
-  for (const t of local)  map.set(t.id, t); // local wins（保留本機最新狀態）
+  for (const t of local)  map.set(t.id, t);
   return Array.from(map.values()).sort((a, b) => a.createdAt - b.createdAt);
 }
