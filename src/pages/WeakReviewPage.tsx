@@ -33,11 +33,13 @@ function buildQuestions(words: StarterWord[], count: number): Question[] {
 
 export default function WeakReviewPage() {
   const { getWeakWords, recordStudy, addWord, words: storeWords } = useStore();
-  const weakEntries = getWeakWords();
 
-  const weakWords: StarterWord[] = weakEntries
-    .map((entry) => allWords.find((sw) => sw.word === entry.word))
-    .filter(Boolean) as StarterWord[];
+  // 凍結初始弱點清單，避免答題後 store 更新導致題目重新洗牌
+  const [weakWords] = useState<StarterWord[]>(() =>
+    getWeakWords()
+      .map((entry) => allWords.find((sw) => sw.word === entry.word))
+      .filter(Boolean) as StarterWord[]
+  );
 
   // ---- 空狀態 ----
   if (weakWords.length === 0) {
@@ -86,8 +88,6 @@ function WeakQuiz({
     if (correct) setScore((s) => s + 1);
     else wrongRef.current.push(q.word);
 
-    recordStudy(correct);
-
     const existing = storeWords.find((w) => w.word === q.word.word);
     const entry: WordEntry = existing
       ? {
@@ -106,9 +106,10 @@ function WeakQuiz({
           timesCorrect: correct ? 1 : 0, timesWrong: correct ? 0 : 1,
           lastWrongDate: correct ? undefined : Date.now(),
         };
-    addWord(entry);
 
     timerRef.current = setTimeout(() => {
+      recordStudy(correct);
+      addWord(entry);
       if (idx + 1 >= questions.length) setFinished(true);
       else { setIdx((i) => i + 1); setSelected(null); setIsCorrect(null); }
     }, 1200);
