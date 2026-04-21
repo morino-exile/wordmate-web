@@ -6,6 +6,7 @@ import { characters } from '../data/characters';
 import { Colors } from '../theme/colors';
 import type { WordEntry } from '../store/useStore';
 
+
 function getRandomLine(lines: string[]): string {
   return lines[Math.floor(Math.random() * lines.length)] ?? '';
 }
@@ -22,7 +23,9 @@ function shuffle<T>(arr: T[]): T[] {
 
 export default function HomePage() {
   const { todayStudied, streak, words: storeWords, selectedCharacterId,
-    characterStates, selectCharacter, addWord, recordStudy } = useStore();
+    characterStates, selectCharacter, addWord, recordStudy, getWordsForReview } = useStore();
+
+  const reviewCount = useMemo(() => getWordsForReview(50).length, [storeWords]);
 
   const character = characters.find((c) => c.id === selectedCharacterId) ?? characters[0];
   const charState = characterStates[character.id];
@@ -174,6 +177,14 @@ export default function HomePage() {
         <QuickBtn to="/flashcard" icon="🃏" label="單字卡" color={Colors.secondary} />
         <QuickBtn to="/quiz" icon="✏️" label="測驗" color={Colors.primary} />
         <QuickBtn to="/weak-review" icon="🔴" label="弱點複習" color={Colors.danger} />
+        <QuickBtn
+          to="/quiz/play?mode=review"
+          icon="📅"
+          label={reviewCount > 0 ? `今日複習 (${reviewCount})` : '今日已完成 ✓'}
+          color={reviewCount > 0 ? Colors.accent : Colors.textMuted}
+          dim={reviewCount === 0}
+        />
+        <QuickBtn to="/spelling" icon="🔤" label="拼字挑戰" color={Colors.secondary} />
       </div>
     </div>
   );
@@ -191,9 +202,9 @@ function MiniBar({ label, value, color }: { label: string; value: number; color:
   );
 }
 
-function QuickBtn({ to, icon, label, color }: { to: string; icon: string; label: string; color: string }) {
+function QuickBtn({ to, icon, label, color, dim }: { to: string; icon: string; label: string; color: string; dim?: boolean }) {
   return (
-    <Link to={to} style={{ ...s.quickBtn, textDecoration: 'none' }}>
+    <Link to={to} style={{ ...s.quickBtn, textDecoration: 'none', opacity: dim ? 0.55 : 1 }}>
       <span style={{ fontSize: '1.5rem' }}>{icon}</span>
       <span style={{ ...s.quickLabel, color }}>{label}</span>
     </Link>

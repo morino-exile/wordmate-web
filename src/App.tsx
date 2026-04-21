@@ -19,6 +19,7 @@ import WeakReviewPage from './pages/WeakReviewPage';
 import SettingsPage from './pages/SettingsPage';
 import TodoPage from './pages/TodoPage';
 import CharacterPage from './pages/CharacterPage';
+import SpellingPage from './pages/SpellingPage';
 
 /** 將目前 store 狀態打包成 SyncData */
 function buildSyncData(): SyncData {
@@ -125,6 +126,7 @@ export default function App() {
           <Route path="/todo"         element={<TodoPage />} />
           <Route path="/character"    element={<CharacterPage />} />
           <Route path="/settings"     element={<SettingsPage />} />
+          <Route path="/spelling"     element={<SpellingPage />} />
         </Routes>
       </Layout>
     </BrowserRouter>
