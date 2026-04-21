@@ -5,7 +5,8 @@ import { Colors } from '../theme/colors';
 import { parseCEFRCsv, type ImportResult } from '../services/csvImport';
 
 export default function SettingsPage() {
-  const { apiKey, setApiKey, geminiModel, setGeminiModel, words, addWord } = useStore();
+  const { apiKey, setApiKey, geminiModel, setGeminiModel, words, addWord,
+    notificationsEnabled, toggleNotifications } = useStore();
   const { user, login, logout } = useAuth();
   const [inputKey, setInputKey] = useState(apiKey);
   const [saved, setSaved] = useState(false);
@@ -156,6 +157,35 @@ export default function SettingsPage() {
         </div>
       </section>
 
+      {/* ── 通知 ── */}
+      <section style={s.section}>
+        <h3 style={s.sectionTitle}>🔔 複習提醒通知</h3>
+        <p style={s.hint}>開啟後，每次打開 App 時若有單字到期複習，會顯示瀏覽器通知。</p>
+        <div style={s.toggleRow}>
+          <span style={{ fontSize: '0.9rem', color: Colors.text }}>
+            {notificationsEnabled ? '已開啟' : '已關閉'}
+          </span>
+          <button
+            style={{ ...s.toggleBtn, backgroundColor: notificationsEnabled ? Colors.primary : Colors.surfaceLight }}
+            onClick={async () => {
+              if (!notificationsEnabled) {
+                const perm = await Notification.requestPermission();
+                if (perm !== 'granted') {
+                  alert('請在瀏覽器設定中允許通知權限');
+                  return;
+                }
+              }
+              toggleNotifications();
+            }}
+          >
+            <div style={{ ...s.toggleKnob, transform: notificationsEnabled ? 'translateX(20px)' : 'translateX(0)' }} />
+          </button>
+        </div>
+        {notificationsEnabled && Notification.permission === 'granted' && (
+          <p style={{ ...s.hint, color: Colors.success, marginBottom: 0 }}>✓ 通知已啟用</p>
+        )}
+      </section>
+
       {/* ── API 金鑰 ── */}
       <section style={s.section}>
         <h3 style={s.sectionTitle}>🤖 Gemini API 設定</h3>
@@ -233,4 +263,7 @@ const s: Record<string, React.CSSProperties> = {
   input: { width: '100%', padding: '0.6rem 0.75rem', borderRadius: 8, border: `1px solid ${Colors.surfaceLight}`, backgroundColor: Colors.background, color: Colors.text, fontSize: '0.95rem', marginBottom: '0.75rem', boxSizing: 'border-box' },
   btnPrimary: { padding: '0.6rem 1.25rem', backgroundColor: Colors.primary, color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer', fontWeight: 600 },
   btnOutline: { marginLeft: 'auto', padding: '0.4rem 1rem', backgroundColor: 'transparent', color: Colors.primary, border: `1px solid ${Colors.primary}`, borderRadius: 8, cursor: 'pointer' },
+  toggleRow: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' },
+  toggleBtn: { width: 44, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer', position: 'relative', transition: 'background 0.2s', padding: 0 },
+  toggleKnob: { position: 'absolute', top: 3, left: 3, width: 18, height: 18, borderRadius: '50%', backgroundColor: '#fff', transition: 'transform 0.2s', boxShadow: '0 1px 3px rgba(0,0,0,0.2)' },
 };

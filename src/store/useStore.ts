@@ -99,6 +99,8 @@ export interface AppState {
   getWordsForReview: (limit?: number) => WordEntry[];
   getWeakWords: (limit?: number) => WordEntry[];
   getWordProgressByExam: (exam: ExamCategory) => { total: number; learned: number; mastered: number };
+  notificationsEnabled: boolean;
+  toggleNotifications: () => void;
   setApiKey: (key: string) => void;
   setGeminiModel: (model: string) => void;
   recordDailyStudy: (count?: number) => void;
@@ -136,6 +138,7 @@ export const useStore = create<AppState>()(
       todos: [],
       apiKey: '',
       geminiModel: 'gemma-3-27b-it',
+      notificationsEnabled: false,
 
       selectCharacter: (id) => {
         const states = { ...get().characterStates };
@@ -221,6 +224,7 @@ export const useStore = create<AppState>()(
         return { total, learned, mastered };
       },
 
+      toggleNotifications: () => set((s) => ({ notificationsEnabled: !s.notificationsEnabled })),
       setApiKey: (key) => set({ apiKey: key }),
       setGeminiModel: (model) => set({ geminiModel: model }),
 

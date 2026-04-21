@@ -27,6 +27,33 @@ export default function HomePage() {
 
   const reviewCount = useMemo(() => getWordsForReview(50).length, [storeWords]);
 
+  // 每日推薦：完全未加入的單字，用日期做固定洗牌
+  const dailyRecs = useMemo(() => {
+    const unseen = allWords.filter((sw) => !storeWords.find((w) => w.word === sw.word));
+    if (unseen.length === 0) return [];
+    const today = new Date().toISOString().slice(0, 10);
+    let seed = today.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0);
+    const arr = [...unseen];
+    for (let i = arr.length - 1; i > 0; i--) {
+      seed = (seed * 1664525 + 1013904223) >>> 0;
+      const j = seed % (i + 1);
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr.slice(0, 5);
+  }, [storeWords]);
+
+  const [recsAdded, setRecsAdded] = useState(false);
+  const addAllRecs = () => {
+    dailyRecs.forEach((sw) => {
+      addWord({
+        word: sw.word, phonetic: sw.phonetic, meaning: sw.meaning,
+        partOfSpeech: sw.partOfSpeech, example: sw.example, exams: sw.exams,
+        mastery: 0, nextReview: Date.now(), timesCorrect: 0, timesWrong: 0,
+      });
+    });
+    setRecsAdded(true);
+  };
+
   const character = characters.find((c) => c.id === selectedCharacterId) ?? characters[0];
   const charState = characterStates[character.id];
   const affection = charState?.affection ?? 0;
@@ -125,6 +152,30 @@ export default function HomePage() {
         </div>
         <p style={s.greeting}>「{greeting}」</p>
       </div>
+
+      {/* 每日推薦 */}
+      {dailyRecs.length > 0 && (
+        <div style={s.card}>
+          <div style={s.widgetLabel}>✨ 今日推薦學習
+            <span style={s.badge}>{dailyRecs.length} 個新單字</span>
+          </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', marginBottom: '0.75rem' }}>
+            {dailyRecs.map((w) => (
+              <div key={w.word} style={s.recRow}>
+                <span style={s.recWord}>{w.word}</span>
+                <span style={s.recMeaning}>{w.meaning}</span>
+              </div>
+            ))}
+          </div>
+          <button
+            style={{ ...s.recBtn, backgroundColor: recsAdded ? Colors.successBg : Colors.primary, color: recsAdded ? Colors.success : '#fff' }}
+            onClick={addAllRecs}
+            disabled={recsAdded}
+          >
+            {recsAdded ? '✓ 已加入單字庫' : '全部加入單字庫'}
+          </button>
+        </div>
+      )}
 
       {/* 快速單字卡 */}
       <div style={s.card}>
@@ -269,6 +320,11 @@ const s: Record<string, React.CSSProperties> = {
     display: 'flex', flexDirection: 'column', alignItems: 'center',
     gap: '0.5rem', padding: '1.25rem 0',
   },
+
+  recRow: { display: 'flex', alignItems: 'baseline', gap: '0.5rem' },
+  recWord: { fontWeight: 700, color: Colors.text, fontSize: '0.9rem', minWidth: 80 },
+  recMeaning: { fontSize: '0.8rem', color: Colors.textSecondary },
+  recBtn: { width: '100%', padding: '0.6rem', border: 'none', borderRadius: 10, fontWeight: 600, fontSize: '0.9rem', cursor: 'pointer', transition: 'all 0.2s' },
 
   quickGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.75rem' },
   quickBtn: {

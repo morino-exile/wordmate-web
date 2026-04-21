@@ -20,6 +20,7 @@ import SettingsPage from './pages/SettingsPage';
 import TodoPage from './pages/TodoPage';
 import CharacterPage from './pages/CharacterPage';
 import SpellingPage from './pages/SpellingPage';
+import StatsPage from './pages/StatsPage';
 
 /** 將目前 store 狀態打包成 SyncData */
 function buildSyncData(): SyncData {
@@ -41,6 +42,19 @@ function buildSyncData(): SyncData {
 
 export default function App() {
   const [userId, setUserId] = useState<string | null>(null);
+
+  // 通知：App 開啟時若有到期複習則推送
+  useEffect(() => {
+    const { notificationsEnabled, getWordsForReview } = useStore.getState();
+    if (!notificationsEnabled || Notification.permission !== 'granted') return;
+    const due = getWordsForReview(50).length;
+    if (due > 0) {
+      new Notification('WordMate 複習提醒 📚', {
+        body: `你有 ${due} 個單字需要複習！`,
+        icon: '/wordmate-web/favicon.svg',
+      });
+    }
+  }, []);
 
   // ── Firebase Auth 監聽 ──────────────────────────────────────────────
   useEffect(() => {
@@ -127,6 +141,7 @@ export default function App() {
           <Route path="/character"    element={<CharacterPage />} />
           <Route path="/settings"     element={<SettingsPage />} />
           <Route path="/spelling"     element={<SpellingPage />} />
+          <Route path="/stats"        element={<StatsPage />} />
         </Routes>
       </Layout>
     </BrowserRouter>

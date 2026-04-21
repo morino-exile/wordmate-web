@@ -9,6 +9,7 @@ const NAV_ITEMS = [
   { label: '弱點', href: '/weak-review' },
   { label: '待辦', href: '/todo' },
   { label: '拼字', href: '/spelling' },
+  { label: '統計', href: '/stats' },
   { label: '角色', href: '/character' },
   { label: '設定', href: '/settings' },
 ];
