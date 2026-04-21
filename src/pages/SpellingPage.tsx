@@ -17,7 +17,7 @@ function shuffle<T>(arr: T[]): T[] {
 }
 
 export default function SpellingPage() {
-  const { words, selectedCharacterId, characterStates, addAffection, addStamina, recordStudy } = useStore();
+  const { words, selectedCharacterId, addAffection, addStamina, recordStudy } = useStore();
   const navigate = useNavigate();
   const character = characters.find((c) => c.id === selectedCharacterId) ?? characters[0];
 
@@ -33,7 +33,7 @@ export default function SpellingPage() {
   const [submitted, setSubmitted] = useState(false);
   const [isCorrect, setIsCorrect] = useState(false);
   const [showHint, setShowHint] = useState(false);
-  const [score, setScore] = useState(0);
+  const [, setScore] = useState(0);
   const [finished, setFinished] = useState(false);
   const [encourageLine, setEncourageLine] = useState('');
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
