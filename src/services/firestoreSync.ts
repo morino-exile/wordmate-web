@@ -35,10 +35,15 @@ export async function saveToFirestore(uid: string, data: SyncData): Promise<void
   const { words, ...meta } = data;
   const now = Date.now();
 
+  // 只上傳「有學習進度」的單字（builtinWords 已內建，不需同步）
+  const studiedWords = words.filter(
+    (w) => w.mastery > 0 || w.timesCorrect > 0 || w.timesWrong > 0,
+  );
+
   // 單字分批
   const chunks: WordEntry[][] = [];
-  for (let i = 0; i < words.length; i += WORDS_PER_CHUNK) {
-    chunks.push(words.slice(i, i + WORDS_PER_CHUNK));
+  for (let i = 0; i < studiedWords.length; i += WORDS_PER_CHUNK) {
+    chunks.push(studiedWords.slice(i, i + WORDS_PER_CHUNK));
   }
 
   // Firestore batch write（最多 500 ops，meta + words_chunk）

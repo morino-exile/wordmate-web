@@ -6,9 +6,10 @@ export interface StarterWord {
   word: string;
   meaning: string;
   partOfSpeech: string;
-  phonetic: string;
+  phonetic?: string;
   example: string;
   exams: ExamCategory[];
+  inventory?: string;
 }
 
 export const starterWords: StarterWord[] = [

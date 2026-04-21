@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from './firebase';
 import { useStore } from './store/useStore';
+import { useBuiltinWords } from './store/useBuiltinWords';
 import {
   saveToFirestore, loadFromFirestore,
   mergeWords, mergeStudyHistory, mergeTodos,
@@ -42,6 +43,10 @@ function buildSyncData(): SyncData {
 
 export default function App() {
   const [userId, setUserId] = useState<string | null>(null);
+  const loadBuiltinWords = useBuiltinWords((s) => s.load);
+
+  // 啟動時載入 CEFR 單字庫
+  useEffect(() => { loadBuiltinWords(); }, []);
 
   // 通知：App 開啟時若有到期複習則推送
   useEffect(() => {

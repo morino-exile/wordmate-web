@@ -1,7 +1,7 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { useStore, calcNextReview, updateMastery } from '../store/useStore';
-import { allWords } from '../data/wordList';
+import { useBuiltinWords } from '../store/useBuiltinWords';
 import { Colors } from '../theme/colors';
 import { playWord } from '../services/audioService';
 import type { StarterWord } from '../data/wordList';
@@ -43,6 +43,8 @@ export default function QuizPage() {
   const { recordStudy, addWord, words: storeWords, getWeakWords, getWordsForReview,
     recordDailyStudy, recordDailyQuiz } = useStore();
 
+  const builtinWords = useBuiltinWords((s) => s.words);
+
   const mode = searchParams.get('mode') ?? 'all';
   const value = searchParams.get('value') ?? '';
 
@@ -58,17 +60,21 @@ export default function QuizPage() {
       pool = getWordsForReview(50).map((w) => ({ word: w.word, meaning: w.meaning }));
       label = '今日複習';
     } else if (mode === 'cefr') {
-      const fromStore = storeWords.filter((w) => w.exams.includes(value as any));
-      const fromBuiltin = allWords.filter((w) => w.exams.includes(value as any) && !fromStore.find((s) => s.word === w.word));
-      pool = [...fromStore, ...fromBuiltin];
+      // 先從 builtinWords 取，再疊加 storeWords 的進度資料
+      const fromBuiltin = builtinWords.filter((w) => w.exams.includes(value as any));
+      const fromStore   = storeWords.filter((w) => w.exams.includes(value as any) && !fromBuiltin.find((b) => b.word === w.word));
+      pool = [...fromBuiltin, ...fromStore];
       label = `CEFR ${value}`;
     } else if (mode === 'inventory') {
-      pool = storeWords.filter((w) => w.inventory === value);
+      const fromBuiltin = builtinWords.filter((w) => w.inventory === value);
+      const fromStore   = storeWords.filter((w) => w.inventory === value && !fromBuiltin.find((b) => b.word === w.word));
+      pool = [...fromBuiltin, ...fromStore];
       label = value.replace(/_/g, ' ');
     } else {
+      // 全部混合：builtinWords 優先，storeWords 補充自訂單字
       const allSet = new Map<string, { word: string; meaning: string }>();
-      for (const w of allWords) allSet.set(w.word, { word: w.word, meaning: w.meaning });
-      for (const w of storeWords) allSet.set(w.word, { word: w.word, meaning: w.meaning });
+      for (const w of builtinWords) allSet.set(w.word, { word: w.word, meaning: w.meaning });
+      for (const w of storeWords)   allSet.set(w.word, { word: w.word, meaning: w.meaning });
       pool = Array.from(allSet.values());
     }
 

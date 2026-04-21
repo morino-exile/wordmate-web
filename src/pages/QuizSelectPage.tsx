@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useStore } from '../store/useStore';
+import { useBuiltinWords } from '../store/useBuiltinWords';
 import { Colors } from '../theme/colors';
 import type { ExamCategory } from '../data/wordList';
 
@@ -55,20 +56,29 @@ function formatInventoryLabel(inv: string): string {
 
 export default function QuizSelectPage() {
   const navigate = useNavigate();
-  const { words } = useStore();
+  const { words: storeWords } = useStore();
+  const builtinWords = useBuiltinWords((s) => s.words);
+
+  // 合併 builtinWords + storeWords（去重，builtin 優先）
+  const allWords = useMemo(() => {
+    const map = new Map(builtinWords.map((w) => [w.word, w]));
+    for (const w of storeWords) if (!map.has(w.word)) map.set(w.word, w as any);
+    return Array.from(map.values());
+  }, [builtinWords, storeWords]);
 
   // 計算各 CEFR 等級的單字數與學習進度
   const cefrStats = useMemo(() => {
+    const storeMap = new Map(storeWords.map((w) => [w.word, w]));
     const stats: Record<string, { total: number; learned: number }> = {};
     for (const level of CEFR_LEVELS) {
-      const levelWords = words.filter((w) => w.exams.includes(level));
+      const levelWords = allWords.filter((w) => w.exams.includes(level));
       stats[level] = {
         total:   levelWords.length,
-        learned: levelWords.filter((w) => w.mastery >= 1).length,
+        learned: levelWords.filter((w) => (storeMap.get(w.word)?.mastery ?? 0) >= 1).length,
       };
     }
     return stats;
-  }, [words]);
+  }, [allWords, storeWords]);
 
   // 向下相容（部分地方只需要 total）
   const cefrCounts = useMemo(() => {
@@ -77,14 +87,14 @@ export default function QuizSelectPage() {
     return c;
   }, [cefrStats]);
 
-  // 計算各情境的單字數
+  // 計算各情境的單字數（從 builtinWords 來，不需要 CSV 上傳）
   const inventoryCounts = useMemo(() => {
     const counts: Record<string, number> = {};
-    for (const w of words) {
+    for (const w of allWords) {
       if (w.inventory) counts[w.inventory] = (counts[w.inventory] ?? 0) + 1;
     }
     return counts;
-  }, [words]);
+  }, [allWords]);
 
   const hasInventory = Object.keys(inventoryCounts).length > 0;
   const hasCefr = CEFR_LEVELS.some((l) => cefrCounts[l] > 0);

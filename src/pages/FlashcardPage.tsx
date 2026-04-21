@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { useStore } from '../store/useStore';
-import { allWords } from '../data/wordList';
+import { useBuiltinWords } from '../store/useBuiltinWords';
 import { Colors } from '../theme/colors';
 import { playWord } from '../services/audioService';
 
@@ -15,7 +15,8 @@ function shuffle<T>(arr: T[]): T[] {
 
 export default function FlashcardPage() {
   const { recordStudy } = useStore();
-  const cards = useMemo(() => shuffle(allWords).slice(0, 20), []);
+  const allWords = useBuiltinWords((s) => s.words);
+  const cards = useMemo(() => shuffle(allWords).slice(0, 20), [allWords]);
   const [idx, setIdx] = useState(0);
   const [flipped, setFlipped] = useState(false);
   const [done, setDone] = useState(false);
