@@ -19,22 +19,23 @@ export interface SyncData {
 // ── 寫入 Supabase ────────────────────────────────────────────────
 
 export async function saveToSupabase(data: SyncData): Promise<void> {
-  // 只同步有學習進度的單字
-  const studiedWords = data.words.filter(
-    (w) => w.mastery > 0 || w.timesCorrect > 0 || w.timesWrong > 0,
-  );
-
-  // 1. 單字進度
-  if (studiedWords.length > 0) {
+  // 全部單字都同步（包含未學習的）
+  if (data.words.length > 0) {
     await supabase.from('word_progress').upsert(
-      studiedWords.map((w) => ({
-        word:            w.word,
-        mastery:         w.mastery,
-        next_review:     w.nextReview,
-        times_correct:   w.timesCorrect,
-        times_wrong:     w.timesWrong,
-        last_wrong_date: w.lastWrongDate ?? null,
-        updated_at:      new Date().toISOString(),
+      data.words.map((w) => ({
+        word:             w.word,
+        meaning:          w.meaning ?? '',
+        phonetic:         w.phonetic ?? null,
+        part_of_speech:   w.partOfSpeech ?? null,
+        example:          w.example ?? null,
+        exams:            w.exams ?? [],
+        inventory:        w.inventory ?? null,
+        mastery:          w.mastery,
+        next_review:      w.nextReview,
+        times_correct:    w.timesCorrect,
+        times_wrong:      w.timesWrong,
+        last_wrong_date:  w.lastWrongDate ?? null,
+        updated_at:       new Date().toISOString(),
       })),
       { onConflict: 'word' },
     );
@@ -103,16 +104,20 @@ export async function loadFromSupabase(): Promise<SyncData | null> {
   // 完全沒有資料（第一次使用）
   if (!statsRes.data) return null;
 
-  // 重建 words
+  // 重建 words（含完整欄位）
   const words: WordEntry[] = (wordsRes.data ?? []).map((r) => ({
     word:          r.word,
-    meaning:       '',          // 定義來自內建單字庫，不需存雲端
+    meaning:       r.meaning ?? '',
+    phonetic:      r.phonetic ?? undefined,
+    partOfSpeech:  r.part_of_speech ?? undefined,
+    example:       r.example ?? undefined,
+    exams:         r.exams ?? [],
+    inventory:     r.inventory ?? undefined,
     mastery:       r.mastery,
     nextReview:    r.next_review,
     timesCorrect:  r.times_correct,
     timesWrong:    r.times_wrong,
     lastWrongDate: r.last_wrong_date ?? undefined,
-    exams:         [],
   }));
 
   // 重建 studyHistory
