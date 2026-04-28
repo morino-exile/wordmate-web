@@ -1,14 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import { onAuthStateChanged } from 'firebase/auth';
-import { auth } from './firebase';
 import { useStore } from './store/useStore';
 import { useBuiltinWords } from './store/useBuiltinWords';
 import {
-  saveToFirestore, loadFromFirestore,
+  saveToSupabase, loadFromSupabase,
   mergeWords, mergeStudyHistory, mergeTodos,
   type SyncData,
-} from './services/firestoreSync';
+} from './services/supabaseSync';
 
 import Layout from './components/Layout';
 import HomePage from './pages/HomePage';
@@ -42,7 +40,6 @@ function buildSyncData(): SyncData {
 }
 
 export default function App() {
-  const [userId, setUserId] = useState<string | null>(null);
   const loadBuiltinWords = useBuiltinWords((s) => s.load);
 
   // 啟動時載入 CEFR 單字庫
@@ -61,76 +58,62 @@ export default function App() {
     }
   }, []);
 
-  // ── Firebase Auth 監聽 ──────────────────────────────────────────────
+  // ── 啟動同步：從 Supabase 載入並合併 ────────────────────────────
   useEffect(() => {
-    const unsubAuth = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        setUserId(user.uid);
-        try {
-          const remote = await loadFromFirestore(user.uid);
-          if (remote) {
-            // 有雲端資料 → 合併
-            const local = useStore.getState();
-            const merged: Partial<SyncData> = {
-              ...remote,
-              words:        mergeWords(local.words, remote.words ?? []),
-              studyHistory: mergeStudyHistory(local.studyHistory, remote.studyHistory ?? {}),
-              todos:        mergeTodos(local.todos, remote.todos ?? []),
-              // 角色狀態：取好感度較高的
-              characterStates: (() => {
-                const merged: typeof remote.characterStates = { ...remote.characterStates };
-                for (const [id, state] of Object.entries(local.characterStates)) {
-                  const r = merged[id];
-                  if (!r) { merged[id] = state; }
-                  else {
-                    merged[id] = {
-                      ...r,
-                      affection: Math.max(r.affection, state.affection),
-                      stamina:   Math.max(r.stamina,   state.stamina),
-                    };
-                  }
+    (async () => {
+      try {
+        const remote = await loadFromSupabase();
+        if (remote) {
+          const local = useStore.getState();
+          const merged: Partial<SyncData> = {
+            ...remote,
+            words:        mergeWords(local.words, remote.words ?? []),
+            studyHistory: mergeStudyHistory(local.studyHistory, remote.studyHistory ?? {}),
+            todos:        mergeTodos(local.todos, remote.todos ?? []),
+            characterStates: (() => {
+              const merged: typeof remote.characterStates = { ...remote.characterStates };
+              for (const [id, state] of Object.entries(local.characterStates)) {
+                const r = merged[id];
+                if (!r) { merged[id] = state; }
+                else {
+                  merged[id] = {
+                    ...r,
+                    affection: Math.max(r.affection, state.affection),
+                    stamina:   Math.max(r.stamina,   state.stamina),
+                  };
                 }
-                return merged;
-              })(),
-              streak:      Math.max(local.streak, remote.streak ?? 0),
-              totalStudied: Math.max(local.totalStudied, remote.totalStudied ?? 0),
-            };
-            useStore.getState().syncFromCloud(merged);
-            // 將合併結果回存雲端
-            await saveToFirestore(user.uid, { ...buildSyncData(), ...merged } as SyncData);
-          } else {
-            // 首次登入：將本機資料上傳
-            await saveToFirestore(user.uid, buildSyncData());
-          }
-        } catch (err) {
-          console.warn('[sync] 登入同步失敗', err);
+              }
+              return merged;
+            })(),
+            streak:       Math.max(local.streak, remote.streak ?? 0),
+            totalStudied: Math.max(local.totalStudied, remote.totalStudied ?? 0),
+          };
+          useStore.getState().syncFromCloud(merged);
+          // 合併結果回存雲端
+          await saveToSupabase({ ...buildSyncData(), ...merged } as SyncData);
+        } else {
+          // 首次使用：將本機資料上傳
+          await saveToSupabase(buildSyncData());
         }
-      } else {
-        setUserId(null);
+      } catch (err) {
+        console.warn('[sync] 啟動同步失敗', err);
       }
-    });
-    return unsubAuth;
+    })();
   }, []);
 
-  // ── 自動同步：store 有變化時 debounce 5 秒後存雲端 ──────────────────
+  // ── 自動同步：store 有變化時 debounce 5 秒後存雲端 ──────────────
   useEffect(() => {
-    if (!userId) return;
     let timer: ReturnType<typeof setTimeout>;
-
     const unsub = useStore.subscribe(() => {
       clearTimeout(timer);
       timer = setTimeout(() => {
-        saveToFirestore(userId, buildSyncData()).catch((err) =>
+        saveToSupabase(buildSyncData()).catch((err) =>
           console.warn('[sync] 自動同步失敗', err),
         );
       }, 5000);
     });
-
-    return () => {
-      unsub();
-      clearTimeout(timer);
-    };
-  }, [userId]);
+    return () => { unsub(); clearTimeout(timer); };
+  }, []);
 
   return (
     <BrowserRouter basename="/wordmate-web">
