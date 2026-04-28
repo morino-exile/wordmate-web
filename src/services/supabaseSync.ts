@@ -94,7 +94,7 @@ export async function saveToSupabase(data: SyncData): Promise<void> {
 
 export async function loadFromSupabase(): Promise<SyncData | null> {
   const [wordsRes, dailyRes, charRes, statsRes, todosRes] = await Promise.all([
-    supabase.from('word_progress').select('*'),
+    supabase.from('word_progress').select('*').limit(50000),
     supabase.from('study_daily').select('*'),
     supabase.from('character_states').select('*'),
     supabase.from('learning_stats').select('*').eq('id', 1).single(),
