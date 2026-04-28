@@ -1,15 +1,17 @@
 import { useState, useRef } from 'react';
 import { useStore } from '../store/useStore';
-import { useAuth } from '../hooks/useAuth';
 import { Colors } from '../theme/colors';
 import { parseCEFRCsv, type ImportResult } from '../services/csvImport';
+import { saveToSupabase } from '../services/supabaseSync';
 
 export default function SettingsPage() {
   const { apiKey, setApiKey, geminiModel, setGeminiModel, words, addWord,
-    notificationsEnabled, toggleNotifications } = useStore();
-  const { user, login, logout } = useAuth();
+    notificationsEnabled, toggleNotifications,
+    streak, totalStudied, lastStudyDate } = useStore();
   const [inputKey, setInputKey] = useState(apiKey);
   const [saved, setSaved] = useState(false);
+  const [syncing, setSyncing] = useState(false);
+  const [syncMsg, setSyncMsg] = useState('');
 
   // CSV 匯入狀態
   const fileRef = useRef<HTMLInputElement>(null);
@@ -57,21 +59,42 @@ export default function SettingsPage() {
     <div style={s.container}>
       <h2 style={s.heading}>設定</h2>
 
-      {/* ── Google 帳號 ── */}
+      {/* ── 雲端同步 ── */}
       <section style={s.section}>
-        <h3 style={s.sectionTitle}>帳號</h3>
-        {user ? (
-          <div style={s.userRow}>
-            <img src={user.photoURL ?? ''} alt="avatar" style={s.avatar} />
-            <div>
-              <div style={s.userName}>{user.displayName}</div>
-              <div style={s.userEmail}>{user.email}</div>
-            </div>
-            <button onClick={logout} style={s.btnOutline}>登出</button>
-          </div>
-        ) : (
-          <button onClick={login} style={s.btnPrimary}>使用 Google 登入</button>
-        )}
+        <h3 style={s.sectionTitle}>☁️ 雲端同步</h3>
+        <p style={s.hint}>資料每 5 秒自動同步到 Supabase，也可以手動觸發。</p>
+        <div style={s.statsRow}>
+          <span style={s.statChip}>🔥 連續 {streak} 天</span>
+          <span style={s.statChip}>📖 累計 {totalStudied} 個</span>
+          {lastStudyDate && <span style={s.statChip}>最後學習 {lastStudyDate}</span>}
+        </div>
+        <button
+          onClick={async () => {
+            setSyncing(true);
+            setSyncMsg('');
+            try {
+              const s = useStore.getState();
+              await saveToSupabase({
+                words: s.words, characterStates: s.characterStates,
+                chatHistories: s.chatHistories, todos: s.todos,
+                studyHistory: s.studyHistory, streak: s.streak,
+                lastStudyDate: s.lastStudyDate, todayStudied: s.todayStudied,
+                totalStudied: s.totalStudied, selectedCharacterId: s.selectedCharacterId,
+                lastSyncAt: Date.now(),
+              });
+              setSyncMsg('✅ 同步成功');
+            } catch {
+              setSyncMsg('❌ 同步失敗，請檢查網路');
+            } finally {
+              setSyncing(false);
+            }
+          }}
+          style={{ ...s.btnPrimary, marginTop: '0.75rem' }}
+          disabled={syncing}
+        >
+          {syncing ? '同步中…' : '立即同步'}
+        </button>
+        {syncMsg && <p style={{ ...s.hint, marginTop: '0.5rem', marginBottom: 0 }}>{syncMsg}</p>}
       </section>
 
       {/* ── CSV 單字匯入 ── */}
