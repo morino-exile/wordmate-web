@@ -270,7 +270,7 @@ export default function HomePage() {
 }
 
 // ── VocabCard ──────────────────────────────────────────────────────
-function VocabCard({ word }: { word: { word: string; phonetic?: string; meaning: string } }) {
+function VocabCard({ word }: { word: { word: string; phonetic?: string; meaning: string; example?: string } }) {
   const [shown, setShown] = useState(false);
   const { recordStudy } = useStore();
   return (
@@ -279,8 +279,11 @@ function VocabCard({ word }: { word: { word: string; phonetic?: string; meaning:
         <div style={sc.cardTitle}>⚡ 快速複習</div>
         <span style={sc.vocabBadge}>點擊翻面</span>
       </div>
-      <div style={{ ...sc.vocabWord, cursor: shown ? 'default' : 'pointer' }} onClick={() => !shown && setShown(true)}>
-        {word.word}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.6rem' }}>
+        <div style={{ ...sc.vocabWord, cursor: shown ? 'default' : 'pointer' }} onClick={() => !shown && setShown(true)}>
+          {word.word}
+        </div>
+        <button style={sc.speakBtn} onClick={() => import('../services/audioService').then(m => m.playWord(word.word))} title="發音">🔊</button>
       </div>
       {word.phonetic && <div style={sc.vocabPhonetic}>{word.phonetic}</div>}
       {!shown && (
@@ -292,6 +295,9 @@ function VocabCard({ word }: { word: { word: string; phonetic?: string; meaning:
       {shown && (
         <>
           <div style={sc.vocabMeaning}>{word.meaning}</div>
+          {word.example && (
+            <div style={sc.vocabExample}>{word.example}</div>
+          )}
           <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
             <button style={sc.btnWrong} onClick={() => { recordStudy(false); setShown(false); }}>✕ 不熟</button>
             <button style={sc.btnRight} onClick={() => { recordStudy(true); setShown(false); }}>✓ 記得</button>
@@ -407,7 +413,15 @@ const sc: Record<string, React.CSSProperties> = {
   vocabMeaning: {
     textAlign: 'center', fontSize: '1.05rem',
     background: Colors.background, border: `1.5px dashed ${Colors.surfaceLight}`,
-    borderRadius: 8, padding: '0.5rem', marginBottom: '1.25rem', cursor: 'pointer',
+    borderRadius: 8, padding: '0.5rem', marginBottom: '0.5rem',
+  },
+  vocabExample: {
+    textAlign: 'center', fontSize: '0.82rem', color: Colors.textSecondary,
+    fontStyle: 'italic', marginBottom: '1rem', lineHeight: 1.5,
+  },
+  speakBtn: {
+    background: 'none', border: 'none', fontSize: '1.2rem',
+    cursor: 'pointer', padding: '0.1rem', opacity: 0.7, lineHeight: 1,
   },
   btnWrong: {
     padding: '0.5rem 1.5rem', border: `2px solid ${Colors.danger}`,

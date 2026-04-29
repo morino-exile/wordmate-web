@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { useStore } from '../store/useStore';
 import { allWords } from '../data/wordList';
 import { Colors } from '../theme/colors';
+import { playWord } from '../services/audioService';
 import type { StarterWord } from '../data/wordList';
 import type { WordEntry } from '../store/useStore';
 
@@ -145,7 +146,10 @@ function WeakQuiz({
       </div>
 
       <div style={s.wordSection}>
-        <p style={s.wordText}>{q.word.word}</p>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+          <p style={{ ...s.wordText, margin: 0 }}>{q.word.word}</p>
+          <button style={s.speakBtn} onClick={() => playWord(q.word.word)} title="發音">🔊</button>
+        </div>
         <p style={s.phonetic}>{q.word.phonetic}</p>
       </div>
 
@@ -171,9 +175,14 @@ function WeakQuiz({
       </div>
 
       {selected !== null && (
-        <p style={{ ...s.feedback, color: isCorrect ? Colors.success : Colors.danger }}>
-          {isCorrect ? '正確！' : `答案：${q.word.meaning}`}
-        </p>
+        <>
+          <p style={{ ...s.feedback, color: isCorrect ? Colors.success : Colors.danger }}>
+            {isCorrect ? '正確！' : `答案：${q.word.meaning}`}
+          </p>
+          {q.word.example && (
+            <p style={s.example}>{q.word.example}</p>
+          )}
+        </>
       )}
     </div>
   );
@@ -207,6 +216,8 @@ const s: Record<string, React.CSSProperties> = {
     transition: 'background 0.2s', boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
   },
   feedback: { textAlign: 'center', fontWeight: 700, fontSize: '1.1rem' },
+  example: { textAlign: 'center', fontStyle: 'italic', color: Colors.textSecondary, fontSize: '0.85rem', margin: '0.4rem 0 0', lineHeight: 1.5 },
+  speakBtn: { background: 'none', border: 'none', fontSize: '1.3rem', cursor: 'pointer', opacity: 0.7, padding: '0.1rem' },
   resultBox: {
     backgroundColor: Colors.card, borderRadius: 16, padding: '2.5rem 2rem',
     textAlign: 'center', boxShadow: '0 4px 20px rgba(0,0,0,0.08)',

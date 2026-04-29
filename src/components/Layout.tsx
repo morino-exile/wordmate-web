@@ -7,11 +7,12 @@ const NAV_ITEMS = [
   { label: '字典', href: '/dictionary' },
   { label: '測驗', href: '/quiz' },
   { label: '弱點', href: '/weak-review' },
-  { label: '待辦', href: '/todo' },
+  { label: '計畫', href: '/todo' },
   { label: '拼字', href: '/spelling' },
   { label: '統計', href: '/stats' },
   { label: '角色', href: '/character' },
   { label: '設定', href: '/settings' },
+  { label: '新聞', href: '/news' },
 ];
 
 export default function Layout({ children }: { children: ReactNode }) {

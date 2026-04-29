@@ -270,9 +270,14 @@ export default function QuizPage() {
         })}
       </div>
       {selected !== null && (
-        <p style={{ ...s.feedback, color: isCorrect ? Colors.success : Colors.danger }}>
-          {isCorrect ? '正確！' : `答案：${q.meaning}`}
-        </p>
+        <>
+          <p style={{ ...s.feedback, color: isCorrect ? Colors.success : Colors.danger }}>
+            {isCorrect ? '正確！' : `答案：${q.meaning}`}
+          </p>
+          {(q.word as any).example && (
+            <p style={s.example}>{(q.word as any).example}</p>
+          )}
+        </>
       )}
     </div>
   );
@@ -296,6 +301,7 @@ const s: Record<string, React.CSSProperties> = {
   options: { display: 'flex', flexDirection: 'column', gap: '0.75rem', marginBottom: '1rem' },
   optBtn: { padding: '1rem 1.25rem', border: 'none', borderRadius: 12, fontWeight: 600, fontSize: '1rem', cursor: 'pointer', transition: 'background 0.2s', boxShadow: '0 2px 8px rgba(0,0,0,0.06)' },
   feedback: { textAlign: 'center', fontWeight: 700, fontSize: '1.1rem' },
+  example: { textAlign: 'center', fontStyle: 'italic', color: Colors.textSecondary, fontSize: '0.85rem', margin: '0.4rem 0 0', lineHeight: 1.5 },
   resultBox: { backgroundColor: Colors.card, borderRadius: 16, padding: '2rem', boxShadow: '0 4px 20px rgba(0,0,0,0.08)' },
   emoji: { fontSize: '3.5rem', textAlign: 'center', marginBottom: '0.5rem' },
   resultTitle: { textAlign: 'center', color: Colors.text, margin: '0 0 0.25rem' },

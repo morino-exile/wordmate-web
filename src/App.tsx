@@ -23,6 +23,7 @@ import TodoPage from './pages/TodoPage';
 import CharacterPage from './pages/CharacterPage';
 import SpellingPage from './pages/SpellingPage';
 import StatsPage from './pages/StatsPage';
+import NewsPage from './pages/NewsPage';
 
 /** 將目前 store 狀態打包成 SyncData */
 function buildSyncData(): SyncData {
@@ -143,6 +144,7 @@ export default function App() {
           <Route path="/settings"     element={<SettingsPage />} />
           <Route path="/spelling"     element={<SpellingPage />} />
           <Route path="/stats"        element={<StatsPage />} />
+          <Route path="/news"         element={<NewsPage />} />
         </Routes>
       </Layout>
     </BrowserRouter>

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useStore } from '../store/useStore';
 import { characters } from '../data/characters';
 import { Colors } from '../theme/colors';
+import { useHabitHistory, type HabitDay } from '../hooks/useHabitHistory';
 import type { TodoItem } from '../store/useStore';
 
 function getRandomLine(lines: string[]): string {
@@ -180,7 +181,7 @@ export default function TodoPage() {
         </div>
         <div style={s.legend}>
           <span style={s.legendItem}><span style={{ ...s.dot, backgroundColor: Colors.success }} /> 學習</span>
-          <span style={s.legendItem}><span style={{ ...s.dot, backgroundColor: Colors.accent }} /> 待辦</span>
+          <span style={s.legendItem}><span style={{ ...s.dot, backgroundColor: Colors.accent }} /> 計畫</span>
         </div>
 
         {selDay && (
@@ -215,7 +216,7 @@ export default function TodoPage() {
 
       {/* ── 新增表單 ── */}
       <div style={s.card}>
-        <div style={s.widgetLabel}>📋 待辦清單</div>
+        <div style={s.widgetLabel}>📋 計畫清單</div>
 
         {/* 快速輸入列 */}
         <div style={s.inputRow}>
@@ -325,6 +326,68 @@ export default function TodoPage() {
             🗑 清除已完成（{doneCount}）
           </button>
         )}
+      </div>
+
+      <HabitCharts />
+    </div>
+  );
+}
+
+// ── 習慣折線圖 ────────────────────────────────────────────────────────
+
+const HABIT_CONFIG = [
+  { key: 'water',    label: '喝水',   unit: 'ml',  color: '#6A9EC0', max: 2000 },
+  { key: 'exercise', label: '運動',   unit: 'min', color: '#7DB88E', max: 120  },
+  { key: 'spending', label: '消費',   unit: '元',  color: '#E8B66A', max: 1000 },
+  { key: 'sleep',    label: '睡眠',   unit: 'hr',  color: '#B8A5D4', max: 10   },
+] as const;
+
+function Sparkline({ data, color, max }: { data: number[]; color: string; max: number }) {
+  const W = 280, H = 50, PAD = 4;
+  const n = data.length;
+  if (n < 2) return null;
+  const xStep = (W - PAD * 2) / (n - 1);
+  const yScale = (v: number) => H - PAD - (Math.min(v, max) / max) * (H - PAD * 2);
+  const points = data.map((v, i) => `${PAD + i * xStep},${yScale(v)}`).join(' ');
+  const areaPoints = `${PAD},${H} ` + points + ` ${PAD + (n - 1) * xStep},${H}`;
+
+  return (
+    <svg viewBox={`0 0 ${W} ${H}`} style={{ width: '100%', height: H, display: 'block' }}>
+      <polygon points={areaPoints} fill={color} opacity={0.15} />
+      <polyline points={points} fill="none" stroke={color} strokeWidth={2} strokeLinejoin="round" />
+      {data.map((v, i) => v > 0 && (
+        <circle key={i} cx={PAD + i * xStep} cy={yScale(v)} r={3} fill={color} />
+      ))}
+    </svg>
+  );
+}
+
+function HabitCharts() {
+  const history = useHabitHistory(14);
+
+  return (
+    <div style={s.card}>
+      <div style={s.widgetLabel}>📈 習慣趨勢（最近 14 天）</div>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+        {HABIT_CONFIG.map(cfg => {
+          const data = history.map(d => d[cfg.key as keyof HabitDay] as number);
+          const total = data.reduce((a, b) => a + b, 0);
+          const activeDays = data.filter(v => v > 0).length;
+          return (
+            <div key={cfg.key}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '0.25rem' }}>
+                <span style={{ fontSize: '0.78rem', fontWeight: 700, color: cfg.color }}>{cfg.label}</span>
+                <span style={{ fontSize: '0.7rem', color: Colors.textMuted }}>
+                  {activeDays} 天有記錄
+                </span>
+              </div>
+              <Sparkline data={data} color={cfg.color} max={cfg.max} />
+              <div style={{ fontSize: '0.7rem', color: Colors.textMuted, marginTop: '0.2rem', textAlign: 'right' }}>
+                累計 {total.toFixed(cfg.key === 'sleep' ? 1 : 0)}{cfg.unit}
+              </div>
+            </div>
+          );
+        })}
       </div>
     </div>
   );
