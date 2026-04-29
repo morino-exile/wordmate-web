@@ -131,7 +131,7 @@ export default function HomePage() {
 
   const character = characters.find(c => c.id === selectedCharacterId) ?? characters[0]!;
   const charState = characterStates[character.id];
-  const greeting = charState ? getRandLine(character.morningLines ?? character.lines) : '…';
+  const greeting = charState ? getRandLine(character.lines.greeting) : '…';
 
   const reviewWords = useMemo(() => getWordsForReview(1), []);
   const reviewWord = reviewWords[0];
@@ -269,8 +269,8 @@ function VocabCard({ word }: { word: { word: string; phonetic?: string; meaning:
       </div>
       {shown && (
         <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-          <button style={sc.btnWrong} onClick={() => { recordStudy(word.word, false); setShown(false); }}>✕ 不熟</button>
-          <button style={sc.btnRight} onClick={() => { recordStudy(word.word, true); setShown(false); }}>✓ 記得</button>
+          <button style={sc.btnWrong} onClick={() => { recordStudy(false); setShown(false); }}>✕ 不熟</button>
+          <button style={sc.btnRight} onClick={() => { recordStudy(true); setShown(false); }}>✓ 記得</button>
         </div>
       )}
     </div>
