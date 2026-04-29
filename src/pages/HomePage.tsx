@@ -1,4 +1,14 @@
 import { useState, useMemo, useRef, useEffect } from 'react';
+
+function useIsMobile(breakpoint = 640) {
+  const [isMobile, setIsMobile] = useState(window.innerWidth < breakpoint);
+  useEffect(() => {
+    const handler = () => setIsMobile(window.innerWidth < breakpoint);
+    window.addEventListener('resize', handler);
+    return () => window.removeEventListener('resize', handler);
+  }, [breakpoint]);
+  return isMobile;
+}
 import { Link } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { characters } from '../data/characters';
@@ -124,6 +134,7 @@ function QuickBtn({ children, onClick }: { children: React.ReactNode; onClick: (
 // ── main ──────────────────────────────────────────────────────────
 
 export default function HomePage() {
+  const isMobile = useIsMobile();
   const { todayStudied, streak, selectedCharacterId, characterStates, getWordsForReview } = useStore();
   const { tasks, habits, loading, addTask, toggleTask, deleteTask, logHabit, today } = useDaily();
   const [newTask, setNewTask] = useState('');
@@ -176,7 +187,7 @@ export default function HomePage() {
       </div>
 
       {/* Stats */}
-      <div style={sc.statsRow}>
+      <div style={{ ...sc.statsRow, gridTemplateColumns: isMobile ? 'repeat(2,1fr)' : 'repeat(4,1fr)' }}>
         <StatCard num={todayStudied} label="今日學字" />
         <StatCard num={`${doneCount}/${tasks.length}`} label="任務完成" />
         <StatCard num={habits.water} label="喝水 ml" />
@@ -184,7 +195,7 @@ export default function HomePage() {
       </div>
 
       {/* Tasks + Habits */}
-      <div style={sc.grid2}>
+      <div style={{ ...sc.grid2, gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr' }}>
 
         {/* 任務卡 */}
         <div style={sc.card}>
