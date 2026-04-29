@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useStore } from '../store/useStore';
 import { characters } from '../data/characters';
@@ -125,13 +125,19 @@ function QuickBtn({ children, onClick }: { children: React.ReactNode; onClick: (
 
 export default function HomePage() {
   const { todayStudied, streak, selectedCharacterId, characterStates, getWordsForReview } = useStore();
-  const { tasks, habits, loading, addTask, toggleTask, logHabit, today } = useDaily();
+  const { tasks, habits, loading, addTask, toggleTask, deleteTask, logHabit, today } = useDaily();
   const [newTask, setNewTask] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
 
   const character = characters.find(c => c.id === selectedCharacterId) ?? characters[0]!;
   const charState = characterStates[character.id];
-  const greeting = charState ? getRandLine(character.lines.greeting) : '…';
+  const greetingRef = useRef<string>('');
+  useEffect(() => {
+    if (charState && !greetingRef.current) {
+      greetingRef.current = getRandLine(character.lines.greeting);
+    }
+  }, [charState, character]);
+  const greeting = greetingRef.current || (charState ? getRandLine(character.lines.greeting) : '…');
 
   const reviewWords = useMemo(() => getWordsForReview(1), []);
   const reviewWord = reviewWords[0];
@@ -199,6 +205,7 @@ export default function HomePage() {
               <span style={{ ...sc.taskText, ...(task.completed ? sc.taskTextDone : {}) }}>
                 {task.content}
               </span>
+              <button style={sc.taskDel} onClick={() => deleteTask(task.id)}>✕</button>
             </div>
           ))}
           <div style={sc.taskAdd}>
@@ -261,17 +268,24 @@ function VocabCard({ word }: { word: { word: string; phonetic?: string; meaning:
         <div style={sc.cardTitle}>⚡ 快速複習</div>
         <span style={sc.vocabBadge}>點擊翻面</span>
       </div>
-      <div style={sc.vocabWord}>{word.word}</div>
-      {word.phonetic && <div style={sc.vocabPhonetic}>{word.phonetic}</div>}
-      <div style={{ ...sc.vocabMeaning, opacity: shown ? 1 : 0, transition: 'opacity 0.2s' }}
-        onClick={() => setShown(true)}>
-        {shown ? word.meaning : '點擊顯示'}
+      <div style={{ ...sc.vocabWord, cursor: shown ? 'default' : 'pointer' }} onClick={() => !shown && setShown(true)}>
+        {word.word}
       </div>
-      {shown && (
-        <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
-          <button style={sc.btnWrong} onClick={() => { recordStudy(false); setShown(false); }}>✕ 不熟</button>
-          <button style={sc.btnRight} onClick={() => { recordStudy(true); setShown(false); }}>✓ 記得</button>
+      {word.phonetic && <div style={sc.vocabPhonetic}>{word.phonetic}</div>}
+      {!shown && (
+        <div style={{ textAlign: 'center', color: Colors.textMuted, fontSize: '0.85rem', marginBottom: '1.25rem', cursor: 'pointer' }}
+          onClick={() => setShown(true)}>
+          點擊單字翻面
         </div>
+      )}
+      {shown && (
+        <>
+          <div style={sc.vocabMeaning}>{word.meaning}</div>
+          <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+            <button style={sc.btnWrong} onClick={() => { recordStudy(false); setShown(false); }}>✕ 不熟</button>
+            <button style={sc.btnRight} onClick={() => { recordStudy(true); setShown(false); }}>✓ 記得</button>
+          </div>
+        </>
       )}
     </div>
   );
@@ -341,6 +355,11 @@ const sc: Record<string, React.CSSProperties> = {
   },
   taskCbDone: { background: Colors.text },
   taskText: { flex: 1, fontSize: '0.9rem' },
+  taskDel: {
+    background: 'none', border: 'none', color: Colors.textMuted,
+    fontSize: '0.75rem', cursor: 'pointer', padding: '0 0.2rem', lineHeight: 1,
+    flexShrink: 0,
+  },
   taskTextDone: { color: Colors.textMuted, textDecoration: 'line-through' },
   taskAdd: { display: 'flex', gap: '0.5rem', marginTop: '0.85rem' },
   taskInput: {

@@ -80,12 +80,17 @@ export function useDaily() {
       .eq('id', id);
   }, []);
 
+  const deleteTask = useCallback(async (id: string) => {
+    setTasks(prev => prev.filter(t => t.id !== id));
+    await supabase.from('daily_tasks').delete().eq('id', id);
+  }, []);
+
   const logHabit = useCallback(async (type: string, value: number) => {
     await supabase.from('habit_logs').insert({ type, value, unit: unitOf(type) });
     setHabits(prev => ({ ...prev, [type]: prev[type as keyof HabitSummary] + value }));
   }, []);
 
-  return { tasks, habits, loading, addTask, toggleTask, logHabit, today: todayTaipei() };
+  return { tasks, habits, loading, addTask, toggleTask, deleteTask, logHabit, today: todayTaipei() };
 }
 
 function unitOf(type: string) {
