@@ -1,33 +1,47 @@
 export const Colors = {
-  // Light warm pink/beige — stationery aesthetic
-  background: '#FFF5EE',
-  surface: '#FFEEE4',
-  surfaceLight: '#FFE0D0',
-  card: '#FFFAF5',
-  cardLight: '#FFF0E8',
+  // Hand-drawn palette
+  background: '#fdfbf7',   // warm paper
+  surface: '#f5f0e8',
+  surfaceLight: '#e5e0d8', // muted / erased pencil
+  card: '#ffffff',
+  cardLight: '#fff9c4',    // post-it yellow
 
-  // Accent
-  primary: '#E8887A',       // warm coral
-  primaryLight: '#F4A89E',
-  secondary: '#B8A5D4',     // soft lavender
-  accent: '#D4956B',        // warm caramel
-  accentSoft: '#F0D4B8',
+  // Ink
+  primary: '#ff4d4d',      // red correction marker
+  primaryLight: '#ff8080',
+  secondary: '#2d5da1',    // blue ballpoint
+  accent: '#2d5da1',
+  accentSoft: '#d0dff5',
 
-  // Text — warm brown tones
-  text: '#5C3D2E',
-  textSecondary: '#8B6F5E',
-  textMuted: '#BEA494',
+  // Text
+  text: '#2d2d2d',         // soft pencil black
+  textSecondary: '#555555',
+  textMuted: '#999999',
 
   // Status
-  success: '#7DB88E',
-  warning: '#E8B66A',
-  danger: '#E07060',
+  success: '#2d7a3a',
+  warning: '#c97d10',
+  danger: '#ff4d4d',
 
   // Functional backgrounds
-  successBg: 'rgba(125,184,142,0.15)',
-  dangerBg: 'rgba(224,112,96,0.12)',
+  successBg: 'rgba(45,122,58,0.1)',
+  dangerBg: 'rgba(255,77,77,0.1)',
 
-  // Character theme colors — lighter versions for light theme
+  // Border / shadow
+  border: '#2d2d2d',
+  shadow: '4px 4px 0px 0px #2d2d2d',
+  shadowSm: '2px 2px 0px 0px #2d2d2d',
+
+  // Wobbly border-radius presets
+  wobbly: '255px 15px 225px 15px / 15px 225px 15px 255px',
+  wobblyAlt: '15px 225px 15px 255px / 225px 15px 255px 15px',
+  wobblyMd: '15px 100px 15px 100px / 100px 15px 100px 15px',
+
+  // Fonts
+  fontHeading: "'Kalam', cursive",
+  fontBody: "'Patrick Hand', 'Noto Sans TC', sans-serif",
+
+  // Character theme colors
   charColors: {
     shiHe: '#D4A754',
     tangZhou: '#9B7EC5',
