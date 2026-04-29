@@ -1,5 +1,8 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import type { Session } from '@supabase/supabase-js';
+import { supabase } from './supabase';
+import LoginPage from './pages/LoginPage';
 import { useStore } from './store/useStore';
 import { useBuiltinWords } from './store/useBuiltinWords';
 import {
@@ -41,6 +44,13 @@ function buildSyncData(): SyncData {
 
 export default function App() {
   const loadBuiltinWords = useBuiltinWords((s) => s.load);
+  const [session, setSession] = useState<Session | null | undefined>(undefined);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data }) => setSession(data.session));
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_e, s) => setSession(s));
+    return () => subscription.unsubscribe();
+  }, []);
 
   // 啟動時載入 CEFR 單字庫
   useEffect(() => { loadBuiltinWords(); }, []);
@@ -114,6 +124,9 @@ export default function App() {
     });
     return () => { unsub(); clearTimeout(timer); };
   }, []);
+
+  if (session === undefined) return null; // 等待 auth 初始化
+  if (!session) return <LoginPage />;
 
   return (
     <BrowserRouter basename="/wordmate-web">
